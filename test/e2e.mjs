@@ -34,6 +34,14 @@ try {
   const otsLoaded = await page.evaluate(() => !!window.OpenTimestamps);
   check(otsLoaded, 'vendored OpenTimestamps bundle sets window.OpenTimestamps');
 
+  const a11y = await page.evaluate(() => ({
+    statusLive: document.getElementById('status-list').getAttribute('aria-live'),
+    vrStatusLive: document.getElementById('vr-status-list').getAttribute('aria-live'),
+    inputFocusable: getComputedStyle(document.getElementById('file-input')).display !== 'none',
+  }));
+  check(a11y.statusLive === 'polite' && a11y.vrStatusLive === 'polite', 'status areas are aria-live=polite');
+  check(a11y.inputFocusable, 'file inputs are focusable (not display:none)');
+
   // ── Stamp: text mode ──
   await page.click('.tab[data-tab="text"]');
   await page.type('#text-input', 'e2e-test ' + Date.now());
@@ -51,6 +59,8 @@ try {
   if (stamp.err) { console.log('FAIL: stamp errored: ' + stamp.err); process.exit(1); }
   check(/^[0-9a-f]{64}$/.test(stamp.hash), 'stamp produced a SHA-256 hash');
   check(/^proof_.*\.zip$/.test(stamp.dlName), 'stamp produced a proof ZIP (' + stamp.dlName + ')');
+  check(!await page.$eval('#download-warning', el => el.classList.contains('hidden')),
+        'original-file warning shown next to the stamp download link');
 
   // ── Feed the produced ZIP into the verify panel via a synthetic drop ──
   await page.evaluate(async () => {
@@ -96,6 +106,22 @@ try {
   await page.waitForFunction(() => document.getElementById('vs-load-error'), { timeout: 15000 });
   check(await page.$eval('#verify-btn', b => !b.disabled), 'retry possible after corrupt-ZIP error');
 
+  // ── Oversized file → rejected with an alert before any hashing ──
+  const dialogsBefore = dialogs.length;
+  await page.evaluate(() => {
+    const file = new File([new ArrayBuffer(100 * 1024 * 1024 + 1)], 'huge.zip');
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    const ev = new DragEvent('drop', { bubbles: true });
+    Object.defineProperty(ev, 'dataTransfer', { value: dt });
+    document.getElementById('zip-drop').dispatchEvent(ev);
+  });
+  await new Promise(r => setTimeout(r, 400));
+  check(dialogs.length > dialogsBefore && dialogs[dialogs.length - 1].includes('not supported'),
+        'oversized file rejected with a clear message');
+  check(await page.$eval('#zip-name', el => el.textContent !== 'huge.zip'),
+        'oversized file was not accepted as input');
+
   // ── Anchored fixture (OpenTimestamps hello-world example) → full VERIFIED
   //    flow via File + OTS, then round-trip the repackaged proof ZIP ──
   const fixtureDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'fixtures');
@@ -136,8 +162,10 @@ try {
   }));
   console.log('fixture verify:', JSON.stringify(fixture, null, 1));
   check(fixture.banner?.includes('verified'), 'anchored fixture gives VERIFIED verdict');
-  check(!fixture.linkHidden && fixture.linkText === 'Save verified proof (.zip)',
+  check(!fixture.linkHidden && fixture.linkText === 'Save verified proof package (.zip, includes original file)',
         'repackaged proof ZIP offered after VERIFIED');
+  check(!await page.$eval('#vr-download-warning', el => el.classList.contains('hidden')),
+        'original-file warning shown next to the verify download link');
   check(fixture.linkName === 'hello-world.txt_opentimestamps.zip',
         'repackaged ZIP has stable _opentimestamps name (' + fixture.linkName + ')');
   check(fixture.btnDisabled, 'verify button locked after VERIFIED (nothing left to redo)');

@@ -1,3 +1,5 @@
+import { hexToBytes } from './util';
+
 // Den vendrade OpenTimestamps-bundlen injiceras som klassiskt <script> av
 // inlineOtsVendor-pluginen i vite.config.ts (se kommentaren där för varför den
 // inte kan importeras som modul). Den sätter window.OpenTimestamps och har
@@ -7,6 +9,18 @@ export function getOts(): OpenTimestampsApi {
     throw new Error('The OpenTimestamps library failed to load.');
   }
   return window.OpenTimestamps;
+}
+
+// Integritetsgränsen mot OpenTimestamps: den här funktionen är det enda
+// stället där appen skapar ett timestamp-objekt för stamping/verifiering, och
+// den tar ENBART den redan beräknade SHA-256-digesten (32 bytes som hex) —
+// filinnehållet passerar aldrig hit och kan därför inte skickas någonstans.
+export function detachedFromHashHex(hashHex: string): OtsDetachedTimestampFile {
+  if (!/^[0-9a-f]{64}$/i.test(hashHex)) {
+    throw new Error('Expected a 64-character SHA-256 hex digest');
+  }
+  const OTS = getOts();
+  return OTS.DetachedTimestampFile.fromHash(new OTS.Ops.OpSHA256(), hexToBytes(hashHex));
 }
 
 // Bibliotekets stamp() väntar på ALLA kalenderservrar utan timeout, så en enda

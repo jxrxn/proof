@@ -1,7 +1,10 @@
 import { byId, createStatusList, wireDrop } from './lib/dom';
 import { buildProofZip } from './lib/proofPackage';
-import { sha256Hex, formatBytes, formatTimestamp, errorMessage, withTimeout } from './lib/util';
-import { getOts, reachableCalendars } from './lib/ots';
+import {
+  sha256Hex, formatBytes, formatTimestamp, errorMessage, withTimeout,
+  MAX_FILE_BYTES, fileTooLargeMessage,
+} from './lib/util';
+import { getOts, reachableCalendars, detachedFromHashHex } from './lib/ots';
 
 export interface StampPanel {
   /** Nollställer hela skapa-sidan (input, statusar, resultatkort, nedladdningslänk). */
@@ -13,18 +16,19 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
   let selectedFile: File | null = null;
   let currentDownloadUrl: string | null = null;
 
-  const tabs          = document.querySelectorAll<HTMLButtonElement>('.tab');
-  const filePanel     = byId('file-panel');
-  const textPanel     = byId('text-panel');
-  const fileInput     = byId<HTMLInputElement>('file-input');
-  const fileNameEl    = byId('file-name');
-  const drop          = byId('drop');
-  const textInput     = byId<HTMLTextAreaElement>('text-input');
-  const generateBtn   = byId<HTMLButtonElement>('generate');
-  const downloadLink  = byId<HTMLAnchorElement>('download-link');
-  const dropPrompt    = byId('drop-prompt');
-  const resultContent = byId('result-content');
-  const resultEmpty   = byId('result-empty');
+  const tabs            = document.querySelectorAll<HTMLButtonElement>('.tab');
+  const filePanel       = byId('file-panel');
+  const textPanel       = byId('text-panel');
+  const fileInput       = byId('file-input', HTMLInputElement);
+  const fileNameEl      = byId('file-name');
+  const drop            = byId('drop');
+  const textInput       = byId('text-input', HTMLTextAreaElement);
+  const generateBtn     = byId('generate', HTMLButtonElement);
+  const downloadLink    = byId('download-link', HTMLAnchorElement);
+  const downloadWarning = byId('download-warning');
+  const dropPrompt      = byId('drop-prompt');
+  const resultContent   = byId('result-content');
+  const resultEmpty     = byId('result-empty');
 
   const status = createStatusList(byId('status-list'), 's-');
 
@@ -37,6 +41,7 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
 
   function clearDownload() {
     downloadLink.classList.add('hidden');
+    downloadWarning.classList.add('hidden');
     if (currentDownloadUrl) {
       URL.revokeObjectURL(currentDownloadUrl);
       currentDownloadUrl = null;
@@ -91,7 +96,15 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
     updateStampBtn();
   }
 
-  wireDrop(drop, fileInput, f => setNewFile(f));
+  wireDrop(drop, fileInput, f => {
+    // Storleksgräns före arrayBuffer(): allt hashas och paketeras i minnet.
+    if (f && f.size > MAX_FILE_BYTES) {
+      alert(fileTooLargeMessage(f));
+      fileInput.value = '';
+      f = null;
+    }
+    setNewFile(f);
+  });
 
   generateBtn.addEventListener('click', async () => {
     generateBtn.disabled = true;
@@ -132,7 +145,8 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
       const OTS = getOts();
 
       status.set('ots', 'Submitting the hash to OpenTimestamps…', 'info');
-      const detached = OTS.DetachedTimestampFile.fromBytes(new OTS.Ops.OpSHA256(), data);
+      // detachedFromHashHex tar bara digesten — filinnehållet lämnar aldrig appen.
+      const detached = detachedFromHashHex(hashHex);
       const calendars = await reachableCalendars();
       await withTimeout(OTS.stamp(detached, { calendars }), 30000,
         'OpenTimestamps calendar servers did not respond. Please try again in a little while.');
@@ -173,7 +187,7 @@ Verify SHA-256 (Windows PowerShell):
 Turn the initial proof into an OpenTimestamps proof (requires opentimestamps-client):
   pip install opentimestamps-client
   ots upgrade "${initialProofName}"   # wait 1-6 hours for Bitcoin anchoring first
-  ots verify  "${initialProofName}"
+  ots verify -f "${originalName}" "${initialProofName}"
   # then keep it as ${otsProofName}
 
 Or verify online:
@@ -206,6 +220,7 @@ How this proof works (4 stages):
       downloadLink.href = currentDownloadUrl;
       downloadLink.download = folderName + '.zip';
       downloadLink.classList.remove('hidden');
+      downloadWarning.classList.remove('hidden');
       resetStampInput();
 
     } catch (err) {

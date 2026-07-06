@@ -1,7 +1,13 @@
-export function byId<T extends HTMLElement = HTMLElement>(id: string): T {
+// Med typargument verifieras elementtypen vid körning i stället för att castas.
+export function byId(id: string): HTMLElement;
+export function byId<T extends HTMLElement>(id: string, type: abstract new (...args: never[]) => T): T;
+export function byId(id: string, type?: abstract new (...args: never[]) => HTMLElement): HTMLElement {
   const el = document.getElementById(id);
   if (!el) throw new Error('Missing element #' + id);
-  return el as T;
+  if (type ? !(el instanceof type) : !(el instanceof HTMLElement)) {
+    throw new Error('#' + id + ' is not the expected element type');
+  }
+  return el;
 }
 
 export type StatusKind = 'info' | 'ok' | 'pending' | 'warn' | 'err';

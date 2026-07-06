@@ -25,6 +25,7 @@ type OtsVerifyResult =
 interface OpenTimestampsApi {
   DetachedTimestampFile: {
     fromBytes(op: OtsOp, bytes: Uint8Array): OtsDetachedTimestampFile;
+    fromHash(op: OtsOp, hash: Uint8Array): OtsDetachedTimestampFile;
     deserialize(bytes: Uint8Array): OtsDetachedTimestampFile;
   };
   Ops: {

@@ -101,7 +101,7 @@ html, body {
 
 .card.verification-result.is-failure {
   background: var(--gray-soft);
-  border-color: var(--gray-line);
+  border-color: #6b3a35;
 }
 
 /* ── Input cards: flex column so button can sit at bottom ── */
@@ -208,7 +208,39 @@ html, body {
   #stamp-input-card .drop.over::before,
   #verify-input-card .drop.over::before { animation: none; }
 }
-input[type="file"] { display: none; }
+/* Visuellt dold men fokuserbar (inte display:none), så att filinputen kan nås
+   med tangentbord; fokusramen ritas på tillhörande drop-yta (input + label). */
+input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+input[type="file"]:focus-visible + .drop {
+  outline: 2px solid var(--blue-light);
+  outline-offset: 2px;
+}
+#verify-input-card input[type="file"]:focus-visible + .drop {
+  outline-color: var(--orange-light);
+}
+
+button:focus-visible,
+a:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--blue-light);
+  outline-offset: 2px;
+}
+#verify-input-card button:focus-visible,
+#verify-input-card textarea:focus-visible {
+  outline-color: var(--orange-light);
+}
 
 .drop-label { font-size: 0.72rem; color: var(--muted); margin: 9px 0 3px 2px; }
 
@@ -267,6 +299,14 @@ button.primary:disabled { background: #2c2c30; border-color: var(--blue-deep); c
 button.primary.verify-btn { background: var(--orange); border-color: var(--orange-deep); }
 button.primary.verify-btn:hover { background: #e08c12; border-color: var(--orange-light); }
 button.primary.verify-btn:disabled { background: #2c2c30; border-color: var(--orange-deep); color: var(--muted); }
+
+/* ── Share warning above save link ── */
+.share-warning {
+  font-size: 0.75rem;
+  color: var(--orange-light);
+  line-height: 1.4;
+  margin-top: 10px;
+}
 
 /* ── Save link ── */
 .download {

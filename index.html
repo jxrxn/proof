@@ -25,14 +25,14 @@
         <button class="tab active" data-tab="file">File</button>
         <button class="tab" data-tab="text">Text</button>
       </div>
-      <div class="helper-text">Create a proof from a file or a short piece of text. Only a SHA-256 hash is submitted — your file or text never leaves your device.</div>
+      <div class="helper-text">Create a proof from a file or a short piece of text. Only a SHA-256 hash is submitted — your file or text never leaves your device. Files up to 100&nbsp;MB.</div>
 
       <div id="file-panel">
+        <input type="file" id="file-input">
         <label for="file-input" class="drop" id="drop">
           <p id="drop-prompt"><strong>Click or drag a file here</strong></p>
           <p id="file-name">No file selected</p>
         </label>
-        <input type="file" id="file-input">
       </div>
 
       <div id="text-panel" class="hidden">
@@ -48,40 +48,40 @@
     <div class="card-title">Verify proof</div>
     <div class="input-card-main">
       <div class="tabs">
-        <button class="vtab active" data-vtab="vzip">ZIP bundle</button>
+        <button class="vtab active" data-vtab="vzip">Proof package</button>
         <button class="vtab" data-vtab="vseparate">File + OTS</button>
         <button class="vtab" data-vtab="vtext">Text + OTS</button>
       </div>
-      <div class="helper-text">Verify a saved ZIP, or match an original file or text with its OpenTimestamps proof.</div>
+      <div class="helper-text">Verify a saved proof package (ZIP), or match an original file or text with its proof file (.ots). Files up to 100&nbsp;MB.</div>
 
       <div id="vzip-panel">
+        <input type="file" id="zip-input" accept=".zip">
         <label for="zip-input" class="drop" id="zip-drop">
-          <p id="zip-prompt"><strong>Drop the saved proof ZIP here</strong></p>
+          <p id="zip-prompt"><strong>Drop the proof package (ZIP) here</strong></p>
           <p id="zip-name">No ZIP selected</p>
         </label>
-        <input type="file" id="zip-input" accept=".zip">
       </div>
 
       <div id="vseparate-panel" class="hidden">
         <div class="drop-label">Original file</div>
+        <input type="file" id="vorig-input">
         <label for="vorig-input" class="drop compact" id="vorig-drop">
           <p id="vorig-name">Click or drag the original file here</p>
         </label>
-        <input type="file" id="vorig-input">
-        <div class="drop-label">OTS proof (.ots file)</div>
+        <div class="drop-label">Proof file (.ots)</div>
+        <input type="file" id="vots-input" accept=".ots">
         <label for="vots-input" class="drop compact" id="vots-drop">
           <p id="vots-name">Click or drag the .ots file here</p>
         </label>
-        <input type="file" id="vots-input" accept=".ots">
       </div>
 
       <div id="vtext-panel" class="hidden">
         <textarea id="vtext-input" placeholder="Paste the original text here…"></textarea>
-        <div class="drop-label">OTS proof (.ots file)</div>
+        <div class="drop-label">Proof file (.ots)</div>
+        <input type="file" id="vots-text-input" accept=".ots">
         <label for="vots-text-input" class="drop compact" id="vots-text-drop">
           <p id="vots-text-name">Click or drag the .ots file here</p>
         </label>
-        <input type="file" id="vots-text-input" accept=".ots">
       </div>
     </div>
 
@@ -106,15 +106,17 @@
       </ul>
       <div class="result-label">SHA-256</div>
       <div class="hash" id="result-hash"></div>
-      <div id="status-list"></div>
-      <a class="download hidden" id="download-link">Save proof (.zip)</a>
+      <div id="status-list" role="status" aria-live="polite"></div>
+      <p class="share-warning hidden" id="download-warning">Warning: this ZIP contains the original file. Anyone you send the ZIP to can open the original.</p>
+      <a class="download hidden" id="download-link">Save proof package (.zip, includes original file)</a>
       <details>
         <summary>What is this proof, and what happens next?</summary>
         <p><strong>1. Hash created locally.</strong> A SHA-256 fingerprint of your file or text was computed on your device. The original was never uploaded.</p>
         <p><strong>2. Hash submitted to OpenTimestamps.</strong> Only the hash was sent. In return you received an <code>.ots</code> file — your <em>initial proof</em>. It does not yet contain Bitcoin verification data.</p>
         <p><strong>3. Bitcoin anchoring (usually 1–6 hours).</strong> OpenTimestamps commits your hash to the Bitcoin blockchain — it is written into a Bitcoin transaction.</p>
         <p><strong>4. OpenTimestamps proof.</strong> Once anchored, your initial proof becomes a full <em>OpenTimestamps proof</em> — now containing Bitcoin verification data — that anyone can verify against the Bitcoin blockchain, without trusting you, me, or OpenTimestamps.</p>
-        <p>To check the proof, use the Verify panel, run <code>ots verify FILE.ots</code>, or visit <a href="https://opentimestamps.org" target="_blank">opentimestamps.org</a>.</p>
+        <p>The proof file (.ots) contains only the hash and can be shared freely. The proof package (.zip) also contains a copy of your original file.</p>
+        <p>To check the proof, use the Verify panel, run <code>ots verify -f ORIGINAL_FILE PROOF.ots</code>, or visit <a href="https://opentimestamps.org" target="_blank" rel="noopener noreferrer">opentimestamps.org</a>.</p>
       </details>
     </div>
   </div>
@@ -126,8 +128,9 @@
     <div id="verify-result-content" class="hidden">
       <div class="result-label">SHA-256 (created locally from your file)</div>
       <div class="hash" id="vr-hash"></div>
-      <div id="vr-status-list"></div>
-      <a class="download solid hidden" id="vr-upgraded-link">Save OpenTimestamps proof</a>
+      <div id="vr-status-list" role="status" aria-live="polite"></div>
+      <p class="share-warning hidden" id="vr-download-warning">Warning: this ZIP contains the original file. Anyone you send the ZIP to can open the original.</p>
+      <a class="download solid hidden" id="vr-upgraded-link">Save proof package (.zip, includes original file)</a>
     </div>
   </div>
 

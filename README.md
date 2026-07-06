@@ -28,7 +28,8 @@ Distribuera genom att kopiera/maila den filen.
   (UMD, sätter `window.OpenTimestamps`; typad i `src/types/opentimestamps.d.ts`)
 - `test/fixtures/` — OpenTimestamps officiella hello-world-exempel (ankrat i
   Bitcoin-block #358391), låter e2e-testet täcka hela VERIFIED-flödet
-- `proof.html` — den gamla enfilsversionen (behållen som referens)
+- `legacy/proof.html` — den gamla enfilsversionen. Arkiverad och ouppdaterad;
+  använd inte den som app, den finns bara som historisk referens.
 
 ## Noteringar
 
@@ -38,3 +39,10 @@ Distribuera genom att kopiera/maila den filen.
 - Kalendrarnas `/timestamp`-endpoints saknar ibland CORS-headers (särskilt
   före ankring), så uppgradering i webbläsaren kan misslyckas mjukt —
   verifieringen visar då korrekt "pending".
+- **Integritet:** `detachedFromHashHex()` i `src/lib/ots.ts` är gränssnittet
+  mot OpenTimestamps — den tar enbart SHA-256-digesten, aldrig filinnehållet.
+  Inga blockutforskar-API:er anropas vid verifiering (BlockCypher borttagen);
+  det biblioteket självt kontaktar är kalenderservrarna och Bitcoin-header-
+  källan som ingår i OpenTimestamps-verifieringen.
+- **Filstorleksgräns:** 100 MB (`MAX_FILE_BYTES` i `src/lib/util.ts`). Allt
+  hashas och paketeras i minnet — streamad hashing/ZIP är inte implementerad.

@@ -1,7 +1,10 @@
 import JSZip from 'jszip';
 import { byId, createStatusList, makeVerdictBanner, wireDrop } from './lib/dom';
-import { sha256Hex, bytesToHex, errorMessage, withTimeout } from './lib/util';
-import { getOts, opentimestampsProofName } from './lib/ots';
+import {
+  sha256Hex, bytesToHex, errorMessage, withTimeout,
+  MAX_FILE_BYTES, fileTooLargeMessage,
+} from './lib/util';
+import { getOts, opentimestampsProofName, detachedFromHashHex } from './lib/ots';
 import { buildProofZip } from './lib/proofPackage';
 
 // README för det ompaketerade beviset som kan sparas efter en verifiering.
@@ -65,17 +68,18 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
   let verifyDone = false;
   let currentUpgradedUrl: string | null = null;
 
-  const vtabs          = document.querySelectorAll<HTMLButtonElement>('.vtab');
-  const vzipPanel      = byId('vzip-panel');
-  const vseparatePanel = byId('vseparate-panel');
-  const vtextPanel     = byId('vtext-panel');
-  const vtextInput     = byId<HTMLTextAreaElement>('vtext-input');
-  const verifyBtn      = byId<HTMLButtonElement>('verify-btn');
-  const zipPrompt      = byId('zip-prompt');
-  const vrContent      = byId('verify-result-content');
-  const vrEmpty        = byId('verify-result-empty');
-  const resultCard     = byId('verify-result-card');
-  const vrUpgradedLink = byId<HTMLAnchorElement>('vr-upgraded-link');
+  const vtabs             = document.querySelectorAll<HTMLButtonElement>('.vtab');
+  const vzipPanel         = byId('vzip-panel');
+  const vseparatePanel    = byId('vseparate-panel');
+  const vtextPanel        = byId('vtext-panel');
+  const vtextInput        = byId('vtext-input', HTMLTextAreaElement);
+  const verifyBtn         = byId('verify-btn', HTMLButtonElement);
+  const zipPrompt         = byId('zip-prompt');
+  const vrContent         = byId('verify-result-content');
+  const vrEmpty           = byId('verify-result-empty');
+  const resultCard        = byId('verify-result-card');
+  const vrUpgradedLink    = byId('vr-upgraded-link', HTMLAnchorElement);
+  const vrDownloadWarning = byId('vr-download-warning');
 
   const vstatus = createStatusList(byId('vr-status-list'), 'vs-');
 
@@ -84,7 +88,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
 
   function setResultState(state: 'success' | 'pending' | 'failure' | 'neutral') {
     resultCard.classList.remove('is-success', 'is-pending', 'is-failure');
-    if (state === 'success') resultCard.classList.add('is-success');
+    if (state !== 'neutral') resultCard.classList.add('is-' + state);
   }
 
   function updateVerifyBtn() {
@@ -101,6 +105,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     vstatus.clear();
     byId('vr-hash').textContent = '';
     vrUpgradedLink.classList.add('hidden');
+    vrDownloadWarning.classList.add('hidden');
     if (currentUpgradedUrl) {
       URL.revokeObjectURL(currentUpgradedUrl);
       currentUpgradedUrl = null;
@@ -112,20 +117,20 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
       vZipFile = null;
       zipPrompt.classList.remove('hidden');
       byId('zip-name').textContent = 'No ZIP selected';
-      byId<HTMLInputElement>('zip-input').value = '';
+      byId('zip-input', HTMLInputElement).value = '';
     }
     if (exceptMode !== 'vseparate') {
       vOrigFile = null; vOtsFile = null;
       byId('vorig-name').textContent = 'Click or drag the original file here';
       byId('vots-name').textContent  = 'Click or drag the .ots file here';
-      byId<HTMLInputElement>('vorig-input').value = '';
-      byId<HTMLInputElement>('vots-input').value  = '';
+      byId('vorig-input', HTMLInputElement).value = '';
+      byId('vots-input', HTMLInputElement).value  = '';
     }
     if (exceptMode !== 'vtext') {
       vOtsTextFile = null;
       vtextInput.value = '';
       byId('vots-text-name').textContent = 'Click or drag the .ots file here';
-      byId<HTMLInputElement>('vots-text-input').value = '';
+      byId('vots-text-input', HTMLInputElement).value = '';
     }
   }
 
@@ -161,8 +166,15 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     mode: VMode, setter: (f: File) => void,
   ) {
     const nameEl = byId(nameId);
-    wireDrop(byId(dropId), byId<HTMLInputElement>(inputId), f => {
+    const inputEl = byId(inputId, HTMLInputElement);
+    wireDrop(byId(dropId), inputEl, f => {
       if (!f) return;
+      // Storleksgräns före arrayBuffer(): allt hashas och packas upp i minnet.
+      if (f.size > MAX_FILE_BYTES) {
+        alert(fileTooLargeMessage(f));
+        inputEl.value = '';
+        return;
+      }
       verifyDone = false;
       clearVerifyOthers(mode);
       clearVerifyResult();
@@ -237,7 +249,8 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     let anchorDetails: string[] = [];
 
     try {
-      const fileDetached = OTS.DetachedTimestampFile.fromBytes(new OTS.Ops.OpSHA256(), fileBytes);
+      // detachedFromHashHex tar bara digesten — filinnehållet lämnar aldrig appen.
+      const fileDetached = detachedFromHashHex(hashHex);
       const result = await withTimeout(OTS.verify(otsDetached, fileDetached), 30000,
         'Verification timed out — a calendar server may be down. Try again later.');
 
@@ -253,6 +266,9 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
       if (entries.length > 0) {
         verdict = 'verified';
         setResultState('success');
+        // Ingen extern blockutforskare anropas här (tidigare BlockCypher):
+        // verifiering ska inte läcka aktivitet till tredje part. Blockhöjd och
+        // tid kommer ur själva verifieringsresultatet.
         const details = anchorDetails;
         for (const [, value] of entries) {
           const blockHeight = value.height;
@@ -261,16 +277,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
             dateStr = new Date(value.timestamp * 1000).toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
           }
           if (blockHeight) {
-            let line = 'Bitcoin block #' + blockHeight.toLocaleString('en') + (dateStr ? ' — ' + dateStr : '');
-            try {
-              const response = await fetch(`https://api.blockcypher.com/v1/btc/main/blocks/${blockHeight}`);
-              if (!response.ok) throw new Error('HTTP ' + response.status);
-              const data: { hash?: string } = await response.json();
-              if (data.hash) line += ' — Hash: ' + data.hash;
-            } catch {
-              // Blockhashen är extrainfo från ett tredjeparts-API — hoppa över vid fel.
-            }
-            details.push(line);
+            details.push('Bitcoin block #' + blockHeight.toLocaleString('en') + (dateStr ? ' — ' + dateStr : ''));
           } else if (dateStr) {
             details.push(dateStr);
           }
@@ -328,9 +335,10 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
       vrUpgradedLink.href = currentUpgradedUrl;
       vrUpgradedLink.download = folderName + '.zip';
       vrUpgradedLink.textContent = verdict === 'verified'
-        ? 'Save verified proof (.zip)'
-        : 'Save updated proof (.zip)';
+        ? 'Save verified proof package (.zip, includes original file)'
+        : 'Save updated proof package (.zip, includes original file)';
       vrUpgradedLink.classList.remove('hidden');
+      vrDownloadWarning.classList.remove('hidden');
     }
 
     return verdict;
