@@ -26,6 +26,8 @@ Distribuera genom att kopiera/maila den filen.
 - `src/lib/` — hjälpfunktioner (hash, DOM, OTS-lager med kalendersondering)
 - `src/vendor/opentimestamps.min.js` — vendrad OpenTimestamps-bundle v0.4.9
   (UMD, sätter `window.OpenTimestamps`; typad i `src/types/opentimestamps.d.ts`)
+- `test/fixtures/` — OpenTimestamps officiella hello-world-exempel (ankrat i
+  Bitcoin-block #358391), låter e2e-testet täcka hela VERIFIED-flödet
 - `proof.html` — den gamla enfilsversionen (behållen som referens)
 
 ## Noteringar

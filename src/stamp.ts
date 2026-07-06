@@ -1,5 +1,5 @@
-import JSZip from 'jszip';
 import { byId, createStatusList, wireDrop } from './lib/dom';
+import { buildProofZip } from './lib/proofPackage';
 import { sha256Hex, formatBytes, formatTimestamp, errorMessage, withTimeout } from './lib/util';
 import { getOts, reachableCalendars } from './lib/ots';
 
@@ -145,12 +145,7 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
       const folderName       = 'proof_' + stamp;
       const initialProofName = folderName + '_initial.ots';
       const otsProofName     = folderName + '_opentimestamps.ots';
-      const zip    = new JSZip();
-      const folder = zip.folder(folderName)!;
-      folder.file(originalName,             mimeContent);
-      folder.file(initialProofName,         otsBytes);
-      folder.file(originalName + '.sha256', hashHex + '  ' + originalName + '\n');
-      folder.file('README.txt', `SHA-256 hash + OpenTimestamps
+      const readme = `SHA-256 hash + OpenTimestamps
 ================================
 Filename:   ${originalName}
 Size:       ${size} bytes
@@ -196,9 +191,17 @@ How this proof works (4 stages):
    verification data to the file, turning the initial proof into a full
    OpenTimestamps proof that anyone can verify against the Bitcoin blockchain,
    without trusting you, me, or OpenTimestamps.
-`);
+`;
 
-      const blob = await zip.generateAsync({ type: 'blob' });
+      const blob = await buildProofZip({
+        folderName,
+        originalName,
+        original: mimeContent,
+        hashHex,
+        otsFileName: initialProofName,
+        otsBytes,
+        readme,
+      });
       currentDownloadUrl = URL.createObjectURL(blob);
       downloadLink.href = currentDownloadUrl;
       downloadLink.download = folderName + '.zip';

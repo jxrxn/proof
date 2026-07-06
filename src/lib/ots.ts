@@ -50,6 +50,9 @@ export async function reachableCalendars(): Promise<string[]> {
 // Name the saved OpenTimestamps proof from the initial proof's filename so the
 // timestamp stays identical: proof_<stamp>_initial.ots -> proof_<stamp>_opentimestamps.ots
 export function opentimestampsProofName(otsName: string | null): string {
+  if (otsName && /_opentimestamps\.ots$/i.test(otsName)) {
+    return otsName;
+  }
   if (otsName && /_initial\.ots$/i.test(otsName)) {
     return otsName.replace(/_initial\.ots$/i, '_opentimestamps.ots');
   }

@@ -2,6 +2,51 @@ import JSZip from 'jszip';
 import { byId, createStatusList, makeVerdictBanner, wireDrop } from './lib/dom';
 import { sha256Hex, bytesToHex, errorMessage, withTimeout } from './lib/util';
 import { getOts, opentimestampsProofName } from './lib/ots';
+import { buildProofZip } from './lib/proofPackage';
+
+// README för det ompaketerade beviset som kan sparas efter en verifiering.
+function verifiedReadme(opts: {
+  originalName: string;
+  size: number;
+  hashHex: string;
+  otsFileName: string;
+  verified: boolean;
+  anchorDetails: string[];
+}): string {
+  const status = opts.verified
+    ? `Full OpenTimestamps proof — VERIFIED, anchored in the Bitcoin blockchain.` +
+      (opts.anchorDetails.length ? '\nAnchoring:  ' + opts.anchorDetails.join('\n            ') : '')
+    : `Updated initial proof — contains newly fetched calendar data, but was
+            not yet confirmed as anchored in Bitcoin when this package was
+            saved. Verify again later.`;
+  return `SHA-256 hash + OpenTimestamps
+================================
+Filename:   ${opts.originalName}
+Size:       ${opts.size} bytes
+Checked:    ${new Date().toISOString()}
+Algorithm:  SHA-256
+Status:     ${status}
+
+SHA-256 hash:
+${opts.hashHex}
+
+Files in this package:
+- ${opts.originalName}           Original file
+- ${opts.originalName}.sha256    SHA-256 hash (shasum format)
+- ${opts.otsFileName}   OpenTimestamps proof
+
+Verify this package:
+- Drop the whole ZIP in the Proof app's "Verify proof" panel, or
+- with the command line client (pip install opentimestamps-client), run in
+  this folder:
+    ots verify -f "${opts.originalName}" "${opts.otsFileName}"
+- or upload the .ots file and the original at https://opentimestamps.org
+
+This proof demonstrates that the file existed at the anchored point in time,
+without trusting anyone: the SHA-256 hash of the file is committed to a
+Bitcoin block via OpenTimestamps.
+`;
+}
 
 export interface VerifyPanel {
   /** Nollställer hela verifiera-sidan (inputs och resultatkort). */
@@ -135,7 +180,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
 
   // Returnerar utfallet — bara 'verified' låser Verify-knappen; övriga utfall
   // ska gå att köra om utan att användaren väljer om sina filer.
-  async function runVerify(fileBytes: Uint8Array<ArrayBuffer>, otsBytes: Uint8Array<ArrayBuffer>, otsName: string): Promise<Verdict> {
+  async function runVerify(fileBytes: Uint8Array<ArrayBuffer>, otsBytes: Uint8Array<ArrayBuffer>, origName: string, otsName: string): Promise<Verdict> {
     const OTS = getOts();
 
     vstatus.clear();
@@ -188,6 +233,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
 
     vstatus.set('verify', 'Verifying the proof against Bitcoin block headers…', 'info');
     let verdict: Verdict = 'error';
+    let anchorDetails: string[] = [];
 
     try {
       const fileDetached = OTS.DetachedTimestampFile.fromBytes(new OTS.Ops.OpSHA256(), fileBytes);
@@ -206,7 +252,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
       if (entries.length > 0) {
         verdict = 'verified';
         setResultState('success');
-        const details: string[] = [];
+        const details = anchorDetails;
         for (const [, value] of entries) {
           const blockHeight = value.height;
           let dateStr = '';
@@ -252,15 +298,37 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
       }
     }
 
-    // Visa spara-länken för det uppgraderade beviset oavsett utfall — om
-    // uppgraderingen lyckades ska användaren inte förlora den för att
-    // verifieringssteget misslyckades.
-    if (upgradedBytes) {
-      const blob = new Blob([upgradedBytes as BlobPart], { type: 'application/octet-stream' });
+    // Erbjud ett komplett ompaketerat ZIP i stället för en lös .ots-fil — en
+    // ensam .ots är obegriplig för mottagaren, medan paketet (original + bevis
+    // + README) kan verifieras direkt i ZIP-fliken. Visas alltid när beviset är
+    // verifierat, och även annars om uppgraderingen hämtade ny data (den ska
+    // inte gå förlorad bara för att verifieringssteget misslyckades).
+    if (verdict === 'verified' || upgradedBytes) {
+      const otsFileName = opentimestampsProofName(otsName);
+      const folderName = otsFileName.replace(/\.ots$/i, '');
+      const blob = await buildProofZip({
+        folderName,
+        originalName: origName,
+        original: fileBytes,
+        hashHex,
+        otsFileName,
+        otsBytes: otsDetached.serializeToBytes(),
+        readme: verifiedReadme({
+          originalName: origName,
+          size: fileBytes.byteLength,
+          hashHex,
+          otsFileName,
+          verified: verdict === 'verified',
+          anchorDetails,
+        }),
+      });
       if (currentUpgradedUrl) URL.revokeObjectURL(currentUpgradedUrl);
       currentUpgradedUrl = URL.createObjectURL(blob);
       vrUpgradedLink.href = currentUpgradedUrl;
-      vrUpgradedLink.download = opentimestampsProofName(otsName);
+      vrUpgradedLink.download = folderName + '.zip';
+      vrUpgradedLink.textContent = verdict === 'verified'
+        ? 'Save verified proof (.zip)'
+        : 'Save updated proof (.zip)';
       vrUpgradedLink.classList.remove('hidden');
     }
 
@@ -320,14 +388,14 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
 
         const otsBytes  = new Uint8Array(await ots.entry.async('arraybuffer'));
         const fileBytes = new Uint8Array(await origEntries[0]!.entry.async('arraybuffer'));
-        verdict = await runVerify(fileBytes, otsBytes, ots.name);
+        verdict = await runVerify(fileBytes, otsBytes, origEntries[0]!.name, ots.name);
 
       } else if (vMode === 'vseparate') {
         if (!vOrigFile) { alert('Please select the original file.'); return; }
         if (!vOtsFile)  { alert('Please select the .ots proof file.'); return; }
         const fileBytes = new Uint8Array(await vOrigFile.arrayBuffer());
         const otsBytes  = new Uint8Array(await vOtsFile.arrayBuffer());
-        verdict = await runVerify(fileBytes, otsBytes, vOtsFile.name);
+        verdict = await runVerify(fileBytes, otsBytes, vOrigFile.name, vOtsFile.name);
 
       } else {
         const text = vtextInput.value.trim();
@@ -335,7 +403,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
         if (!vOtsTextFile) { alert('Please select the .ots proof file.'); return; }
         const fileBytes = new TextEncoder().encode(text);
         const otsBytes  = new Uint8Array(await vOtsTextFile.arrayBuffer());
-        verdict = await runVerify(fileBytes, otsBytes, vOtsTextFile.name);
+        verdict = await runVerify(fileBytes, otsBytes, 'text.txt', vOtsTextFile.name);
       }
     } catch (e) {
       // T.ex. korrupt ZIP eller oläsbar fil — visa felet i stället för att fela tyst.

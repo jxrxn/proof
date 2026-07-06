@@ -8,6 +8,7 @@
 import puppeteer from 'puppeteer-core';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { readFileSync } from 'node:fs';
 
 const dist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../dist/index.html');
 const APP = 'file://' + dist;
@@ -89,6 +90,78 @@ try {
   await page.click('#verify-btn');
   await page.waitForFunction(() => document.getElementById('vs-load-error'), { timeout: 15000 });
   check(await page.$eval('#verify-btn', b => !b.disabled), 'retry possible after corrupt-ZIP error');
+
+  // ── Anchored fixture (OpenTimestamps hello-world example) → full VERIFIED
+  //    flow via File + OTS, then round-trip the repackaged proof ZIP ──
+  const fixtureDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'fixtures');
+  const origB64 = readFileSync(path.join(fixtureDir, 'hello-world.txt')).toString('base64');
+  const otsB64  = readFileSync(path.join(fixtureDir, 'hello-world.txt.ots')).toString('base64');
+
+  await page.click('.vtab[data-vtab="vseparate"]');
+  await page.evaluate((origB64, otsB64) => {
+    const toFile = (b64, name) => {
+      const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+      return new File([bytes], name);
+    };
+    const dropOn = (id, file) => {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      const ev = new DragEvent('drop', { bubbles: true });
+      Object.defineProperty(ev, 'dataTransfer', { value: dt });
+      document.getElementById(id).dispatchEvent(ev);
+    };
+    dropOn('vorig-drop', toFile(origB64, 'hello-world.txt'));
+    dropOn('vots-drop',  toFile(otsB64,  'hello-world.txt.ots'));
+  }, origB64, otsB64);
+  check(await page.$eval('#verify-btn', b => !b.disabled), 'verify button enabled after File + OTS drops');
+
+  await page.click('#verify-btn');
+  await page.waitForFunction(
+    () => document.querySelector('#vr-status-list .verdict-banner') ||
+          document.querySelector('#vr-status-list .status.err'),
+    { timeout: 90000 }
+  );
+  const fixture = await page.evaluate(() => ({
+    banner: document.querySelector('#vr-status-list .verdict-banner')?.className || null,
+    bannerText: document.querySelector('#vr-status-list .verdict-banner')?.textContent.slice(0, 140) || null,
+    linkHidden: document.getElementById('vr-upgraded-link').classList.contains('hidden'),
+    linkText: document.getElementById('vr-upgraded-link').textContent,
+    linkName: document.getElementById('vr-upgraded-link').download,
+    btnDisabled: document.getElementById('verify-btn').disabled,
+  }));
+  console.log('fixture verify:', JSON.stringify(fixture, null, 1));
+  check(fixture.banner?.includes('verified'), 'anchored fixture gives VERIFIED verdict');
+  check(!fixture.linkHidden && fixture.linkText === 'Save verified proof (.zip)',
+        'repackaged proof ZIP offered after VERIFIED');
+  check(fixture.linkName === 'hello-world.txt_opentimestamps.zip',
+        'repackaged ZIP has stable _opentimestamps name (' + fixture.linkName + ')');
+  check(fixture.btnDisabled, 'verify button locked after VERIFIED (nothing left to redo)');
+
+  // Round-trip: the saved package must verify in the ZIP tab
+  await page.click('.vtab[data-vtab="vzip"]');
+  await page.evaluate(async () => {
+    const link = document.getElementById('vr-upgraded-link');
+    const blob = await (await fetch(link.href)).blob();
+    const file = new File([blob], link.download, { type: 'application/zip' });
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    const ev = new DragEvent('drop', { bubbles: true });
+    Object.defineProperty(ev, 'dataTransfer', { value: dt });
+    document.getElementById('zip-drop').dispatchEvent(ev);
+  });
+  await page.click('#verify-btn');
+  await page.waitForFunction(
+    () => document.querySelector('#vr-status-list .verdict-banner') ||
+          document.querySelector('#vr-status-list .status.err'),
+    { timeout: 90000 }
+  );
+  const roundtrip = await page.evaluate(() => ({
+    banner: document.querySelector('#vr-status-list .verdict-banner')?.className || null,
+    linkName: document.getElementById('vr-upgraded-link').download,
+  }));
+  check(roundtrip.banner?.includes('verified'), 'round-trip: repackaged ZIP verifies as VERIFIED');
+  check(roundtrip.linkName === 'hello-world.txt_opentimestamps.zip',
+        'round-trip keeps a stable package name (' + roundtrip.linkName + ')');
 
   if (errors.length) { console.log('page errors:', errors); failures++; }
   console.log(failures === 0 ? 'ALL CHECKS PASSED' : failures + ' CHECK(S) FAILED');
