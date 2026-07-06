@@ -130,6 +130,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
   }
 
   function resetPanel() {
+    verifyDone = false;
     clearVerifyOthers(null);
     updateVerifyBtn();
     clearVerifyResult();
@@ -334,6 +335,14 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
 
     return verdict;
   }
+
+  // Samma beteende som nedladdningslänken på skapa-sidan: efter att paketet
+  // sparats, erbjud att börja om med ett nytt bevis.
+  vrUpgradedLink.addEventListener('click', () => {
+    setTimeout(() => {
+      if (confirm('Start fresh with a new proof?')) resetPanel();
+    }, 400);
+  });
 
   verifyBtn.addEventListener('click', async () => {
     try {

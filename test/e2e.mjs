@@ -21,8 +21,13 @@ const browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new'
 try {
   const page = await browser.newPage();
   const errors = [];
+  const dialogs = [];
   page.on('pageerror', e => errors.push('PAGEERROR: ' + e.message));
-  page.on('dialog', async d => { console.log('DIALOG:', d.message().split('\n')[0]); await d.dismiss(); });
+  page.on('dialog', async d => {
+    dialogs.push(d.message());
+    console.log('DIALOG:', d.message().split('\n')[0]);
+    await d.dismiss();
+  });
 
   await page.goto(APP, { waitUntil: 'networkidle0', timeout: 30000 });
 
@@ -162,6 +167,14 @@ try {
   check(roundtrip.banner?.includes('verified'), 'round-trip: repackaged ZIP verifies as VERIFIED');
   check(roundtrip.linkName === 'hello-world.txt_opentimestamps.zip',
         'round-trip keeps a stable package name (' + roundtrip.linkName + ')');
+
+  // Saving the package offers to start fresh (dialog is dismissed = cancel)
+  await page.click('#vr-upgraded-link');
+  await new Promise(r => setTimeout(r, 900));
+  check(dialogs.includes('Start fresh with a new proof?'),
+        'saving the verified package asks to start fresh');
+  check(!await page.$eval('#vr-upgraded-link', el => el.classList.contains('hidden')),
+        'cancelling the dialog keeps the result intact');
 
   if (errors.length) { console.log('page errors:', errors); failures++; }
   console.log(failures === 0 ? 'ALL CHECKS PASSED' : failures + ' CHECK(S) FAILED');
