@@ -1,0 +1,411 @@
+:root {
+  --bg:             #0d0d10;
+  --surface:        #18181c;
+  --surface2:       #222226;
+  --border:         #2e2e33;
+  --text:           #e8e8ed;
+  --muted:          #8e8e93;
+  --blue:           #4d9fe8;
+  --blue-soft:      #10263d;
+  --blue-soft-line: #294d72;
+  --blue-deep:      #244a72;
+  --blue-light:     #88c7ff;
+  --green:          #2f8f59;
+  --green-soft:     #11261b;
+  --green-line:     #275e3c;
+  --green-light:    #59b97d;
+  --orange:         #cc7a00;
+  --orange-soft:    #2b1d0b;
+  --orange-line:    #6b4a1c;
+  --orange-deep:    #7e4d00;
+  --orange-light:   #ffb84d;
+  --red:            #cc584d;
+  --gray-soft:      #1e2025;
+  --gray-line:      #353a44;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+}
+
+/* ── Header ── */
+.app-header {
+  padding: 14px 20px 11px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: transparent;
+}
+.app-header h1 { font-size: 1.15rem; font-weight: 700; white-space: nowrap; }
+.app-header .sub { font-size: 0.8rem; color: var(--muted); line-height: 1.4; }
+.app-header .sub .privacy { color: #397fbe; }
+
+/* ── 2×2 grid ── */
+.app-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 14px 20px 28px;
+}
+
+/* ── Card ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 15px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+}
+
+.card-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  color: var(--muted);
+}
+
+.card.create-proof,
+.card.proof {
+  background: var(--blue-soft);
+  border-color: var(--blue-soft-line);
+}
+
+.card.verify-proof {
+  background: var(--orange-soft);
+  border-color: var(--orange-line);
+}
+
+.card.verification-result {
+  background: var(--gray-soft);
+  border-color: var(--gray-line);
+}
+
+.card.verification-result.is-success {
+  background: var(--green-soft);
+  border-color: var(--green-line);
+}
+
+.card.verification-result.is-pending {
+  background: var(--gray-soft);
+  border-color: var(--gray-line);
+}
+
+.card.verification-result.is-failure {
+  background: var(--gray-soft);
+  border-color: var(--gray-line);
+}
+
+/* ── Input cards: flex column so button can sit at bottom ── */
+.input-card {
+  display: flex;
+  flex-direction: column;
+}
+.input-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.input-card > button.primary {
+  margin-top: auto;
+}
+
+/* ── Tabs ── */
+.tabs { display: flex; gap: 6px; margin-bottom: 13px; }
+.tab, .vtab {
+  flex: 1;
+  padding: 7px 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 7px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-family: inherit;
+  transition: all 0.12s;
+}
+.tab { border: 1px solid var(--blue-deep); }
+.vtab { border: 1px solid var(--orange-deep); }
+.tab:hover { color: var(--text); border-color: var(--blue-light); }
+.vtab:hover { color: var(--text); border-color: var(--orange-light); }
+.tab.active  { background: var(--blue);   color: #fff; border-color: var(--blue-light); }
+.vtab.active { background: var(--orange); color: #fff; border-color: var(--orange-light); }
+
+/* ── Drop zone ── */
+.drop {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 112px;
+  background: rgba(255, 255, 255, 0.04);
+  border: none;
+  border-radius: 8px;
+  padding: 22px 14px;
+  text-align: center;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.12s;
+  font-size: 0.82rem;
+  position: relative;
+}
+
+.drop::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    135deg,
+    transparent,
+    transparent 12px,
+    rgba(46, 46, 51, 0.15) 12px,
+    rgba(46, 46, 51, 0.15) 24px
+  );
+}
+#stamp-input-card .drop::before { background: repeating-linear-gradient(135deg, transparent, transparent 6px, rgba(136, 199, 255, 0.15) 6px, rgba(136, 199, 255, 0.15) 12px); }
+#verify-input-card .drop::before { background: repeating-linear-gradient(135deg, transparent, transparent 6px, rgba(255, 184, 77, 0.15) 6px, rgba(255, 184, 77, 0.15) 12px); }
+.drop.compact { min-height: 60px; padding: 10px 14px; }
+.drop p { margin: 2px 0; }
+.drop strong { color: var(--text); }
+#create-proof-card .drop.over,
+#stamp-input-card .drop.over { background: #13253a; color: var(--text); }
+/* Samma riktning (135deg) och tjocklek som de bleka ränderna före hover,
+   bara med den ljusare hover-färgen. create-proof har 12px-ränder (period 24px),
+   stamp/verify har 6px-ränder (period 12px). */
+#create-proof-card .drop.over::before { background: repeating-linear-gradient(135deg, transparent, transparent 12px, var(--blue-light) 12px, var(--blue-light) 24px); }
+#stamp-input-card .drop.over::before { background: repeating-linear-gradient(135deg, transparent, transparent 6px, var(--blue-light) 6px, var(--blue-light) 12px); }
+#verify-input-card .drop.over { background: #33230d; color: var(--text); }
+#verify-input-card .drop.over::before { background: repeating-linear-gradient(135deg, transparent, transparent 6px, var(--orange-light) 6px, var(--orange-light) 12px); }
+/* Animera ränderna så de glider jämnt i en sömlös loop.
+   För 135deg-mönstret gör en bakgrundsruta på period * √2 att mönstret kan
+   upprepas sömlöst, och vi flyttar bakgrunden exakt en period per varv. */
+#create-proof-card .drop.over::before {
+  background-size: 33.94px 33.94px;   /* 24px * √2 */
+  animation: dropStripeSlide24 1s linear infinite;
+}
+#stamp-input-card .drop.over::before,
+#verify-input-card .drop.over::before {
+  background-size: 16.97px 16.97px;   /* 12px * √2 */
+  animation: dropStripeSlide12 1s linear infinite;
+}
+@keyframes dropStripeSlide24 {
+  to { background-position: 16.97px 16.97px; }   /* 24px / √2 = en period */
+}
+@keyframes dropStripeSlide12 {
+  to { background-position: 8.49px 8.49px; }      /* 12px / √2 = en period */
+}
+@media (prefers-reduced-motion: reduce) {
+  #create-proof-card .drop.over::before,
+  #stamp-input-card .drop.over::before,
+  #verify-input-card .drop.over::before { animation: none; }
+}
+input[type="file"] { display: none; }
+
+.drop-label { font-size: 0.72rem; color: var(--muted); margin: 9px 0 3px 2px; }
+
+.helper-text {
+  min-height: 3em;
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+#file-panel,
+#text-panel,
+#vzip-panel,
+#vtext-panel {
+  min-height: 108px;
+}
+
+#text-panel textarea,
+#vtext-panel textarea {
+  height: 108px;
+  min-height: 108px;
+}
+
+/* ── Textarea ── */
+textarea {
+  width: 100%;
+  min-height: 108px;
+  padding: 9px 11px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.85rem;
+  resize: vertical;
+}
+textarea::placeholder { color: var(--muted); }
+textarea:focus { outline: none; border-color: var(--blue); }
+
+/* ── Button ── */
+button.primary {
+  width: 100%;
+  padding: 11px;
+  background: var(--blue);
+  color: white;
+  border: 1px solid var(--blue-deep);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s, border-color 0.12s;
+}
+button.primary:hover { background: #338fdf; border-color: var(--blue-light); }
+button.primary:disabled { background: #2c2c30; border-color: var(--blue-deep); color: var(--muted); cursor: not-allowed; }
+button.primary.verify-btn { background: var(--orange); border-color: var(--orange-deep); }
+button.primary.verify-btn:hover { background: #e08c12; border-color: var(--orange-light); }
+button.primary.verify-btn:disabled { background: #2c2c30; border-color: var(--orange-deep); color: var(--muted); }
+
+/* ── Save link ── */
+.download {
+  display: block;
+  text-align: center;
+  padding: 10px;
+  background: #0f2417;
+  border: 1px solid #275e3c;
+  color: var(--green);
+  text-decoration: none;
+  border-radius: 8px;
+  margin-top: 10px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: background 0.12s;
+}
+.download:hover { background: #14311f; }
+.download.solid { background: var(--green); border-color: var(--green-light); color: #fff; }
+.download.solid:hover { background: #3ca268; }
+
+/* ── Hash display ── */
+.hash {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  padding: 9px 11px;
+  border-radius: 6px;
+  font-size: 0.92rem;
+  margin: 5px 0;
+  word-break: break-all;
+  color: #397fbe;
+  letter-spacing: 0.02em;
+}
+
+/* ── Meta rows ── */
+.meta { font-size: 0.8rem; color: var(--muted); margin: 3px 0; }
+
+/* ── Status — no background, just color ── */
+.status {
+  padding: 3px 0;
+  margin: 4px 0;
+  font-size: 0.79rem;
+  line-height: 1.4;
+}
+.status.info { color: #397fbe; }
+.status.ok   { color: var(--green); }
+.status.pending { color: #d4b15d; }
+.status.warn { color: var(--orange); }
+.status.err  { color: var(--red); }
+
+/* ── Verdict — plain text, left-aligned ── */
+.verdict-banner { margin: 8px 0; }
+.verdict-banner .big   { font-size: 1rem; font-weight: 700; margin-right: 5px; }
+.verdict-banner .label { font-size: 0.85rem; font-weight: 700; }
+.verdict-banner .detail{ font-size: 0.79rem; margin-top: 5px; line-height: 1.5; opacity: 0.85; }
+.verdict-banner.verified { color: var(--green); }
+.verdict-banner.pending  { color: var(--orange); }
+.verdict-banner.failed   { color: var(--red); }
+
+/* ── Details / accordion ── */
+details { margin-top: 11px; }
+summary  { font-size: 0.78rem; cursor: pointer; color: var(--blue); user-select: none; }
+details p { font-size: 0.78rem; color: var(--muted); margin: 6px 0; line-height: 1.5; }
+details code { background: rgba(255, 255, 255, 0.06); padding: 1px 4px; border-radius: 3px; font-size: 0.72rem; color: #7ec8ff; }
+details a { color: var(--blue); }
+
+/* ── Result labels ── */
+.result-title { font-size: 0.85rem; font-weight: 600; margin-bottom: 9px; }
+.result-label { font-size: 0.7rem; color: var(--muted); margin: 7px 0 2px; }
+
+/* ── Empty state (result cards before use) ── */
+.empty-state {
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding: 24px 0 38px;
+  text-align: center;
+}
+
+.app-footer {
+  padding: 0 20px 28px;
+}
+
+.footer-info {
+  display: inline-block;
+  margin-left: auto;
+}
+
+.footer-info summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  list-style: none;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.footer-info summary::-webkit-details-marker {
+  display: none;
+}
+
+.info-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 1px solid var(--gray-line);
+  background: rgba(255, 255, 255, 0.04);
+  color: #7ec8ff;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.footer-panel {
+  margin-top: 10px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 16px 18px;
+  color: var(--muted);
+  line-height: 1.6;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+}
+
+.footer-panel p + p {
+  margin-top: 10px;
+}
+
+/* ── Utility ── */
+.hidden { display: none !important; }
+
+/* ── Mobile: single column, natural stacking order ── */
+@media (max-width: 720px) {
+  .app-body { grid-template-columns: 1fr; padding: 12px 14px 28px; }
+  .app-footer { padding: 0 14px 28px; }
+  #stamp-input-card  { order: 1; }
+  #result-card       { order: 2; }
+  #verify-input-card { order: 3; }
+  #verify-result-card { order: 4; }
+  .app-header { gap: 6px; }
+}
