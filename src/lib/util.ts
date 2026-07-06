@@ -17,8 +17,12 @@ export function hexToBytes(hex: string): Uint8Array<ArrayBuffer> {
 
 // Allt hashas och paketeras i minnet (File.arrayBuffer + JSZip), utan streamad
 // hashing — mycket stora filer kan därför krascha fliken. Gränsen är medvetet
-// konservativ och gäller både skapa- och verifiera-flödet.
+// konservativ och gäller både skapa- och verifiera-flödet, inklusive
+// uppackade entries inuti ett proof package (skydd mot zip-bomber).
 export const MAX_FILE_BYTES = 100 * 1024 * 1024;
+
+// Ett giltigt .ots-bevis är typiskt några kB; 10 MB är en generös övre gräns.
+export const MAX_OTS_BYTES = 10 * 1024 * 1024;
 
 export function fileTooLargeMessage(f: File): string {
   const limitMb = Math.round(MAX_FILE_BYTES / 1048576);

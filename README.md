@@ -46,3 +46,6 @@ Distribuera genom att kopiera/maila den filen.
   källan som ingår i OpenTimestamps-verifieringen.
 - **Filstorleksgräns:** 100 MB (`MAX_FILE_BYTES` i `src/lib/util.ts`). Allt
   hashas och paketeras i minnet — streamad hashing/ZIP är inte implementerad.
+  Gränsen gäller även **uppackade entries** i ett proof package: okomprimerad
+  storlek kontrolleras före uppackning (zip-bombskydd), och .ots-entryn har en
+  egen gräns på 10 MB (`MAX_OTS_BYTES`).

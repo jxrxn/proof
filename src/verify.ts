@@ -2,7 +2,7 @@ import JSZip from 'jszip';
 import { byId, createStatusList, makeVerdictBanner, wireDrop } from './lib/dom';
 import {
   sha256Hex, bytesToHex, errorMessage, withTimeout,
-  MAX_FILE_BYTES, fileTooLargeMessage,
+  MAX_FILE_BYTES, MAX_OTS_BYTES, fileTooLargeMessage,
 } from './lib/util';
 import { getOts, opentimestampsProofName, detachedFromHashHex } from './lib/ots';
 import { buildProofZip } from './lib/proofPackage';
@@ -58,6 +58,30 @@ export interface VerifyPanel {
 
 type VMode = 'vzip' | 'vseparate' | 'vtext';
 type Verdict = 'verified' | 'pending' | 'failed' | 'error';
+
+// JSZip:s publika API exponerar inte okomprimerad storlek, men varje entry
+// från loadAsync bär ett internt CompressedObject med uncompressedSize.
+// Returnerar null om fältet saknas (t.ex. framtida JSZip-version).
+function entryUncompressedSize(entry: JSZip.JSZipObject): number | null {
+  const data = (entry as { _data?: { uncompressedSize?: unknown } })._data;
+  return typeof data?.uncompressedSize === 'number' ? data.uncompressedSize : null;
+}
+
+// Läser en ZIP-entry med storleksgräns: okomprimerad storlek kontrolleras
+// FÖRE uppackning (zip-bombskydd — en liten men hårt komprimerad ZIP får inte
+// expandera till något som kraschar fliken), och som bälte-och-hängslen även
+// efter uppackning ifall det interna storleksfältet inte gick att läsa.
+async function readEntryGuarded(
+  entry: JSZip.JSZipObject,
+  limit: number,
+  message: string,
+): Promise<Uint8Array<ArrayBuffer>> {
+  const size = entryUncompressedSize(entry);
+  if (size !== null && size > limit) throw new Error(message);
+  const bytes = new Uint8Array(await entry.async('arraybuffer'));
+  if (bytes.byteLength > limit) throw new Error(message);
+  return bytes;
+}
 
 export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
   let vMode: VMode = 'vzip';
@@ -403,8 +427,20 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
           ots = upgraded;
         }
 
-        const otsBytes  = new Uint8Array(await ots.entry.async('arraybuffer'));
-        const fileBytes = new Uint8Array(await origEntries[0]!.entry.async('arraybuffer'));
+        // Zip-bombskydd: avvisa för stora entries innan de packas upp.
+        const origTooBig =
+          `The original file inside this ZIP is larger than ` +
+          `${Math.round(MAX_FILE_BYTES / 1048576)} MB and cannot be verified in the browser.`;
+        const otsTooBig =
+          `The .ots proof inside this ZIP is larger than ` +
+          `${Math.round(MAX_OTS_BYTES / 1048576)} MB and does not look like a valid OpenTimestamps proof.`;
+        const origSize = entryUncompressedSize(origEntries[0]!.entry);
+        if (origSize !== null && origSize > MAX_FILE_BYTES) { alert(origTooBig); return; }
+        const otsSize = entryUncompressedSize(ots.entry);
+        if (otsSize !== null && otsSize > MAX_OTS_BYTES) { alert(otsTooBig); return; }
+
+        const otsBytes  = await readEntryGuarded(ots.entry, MAX_OTS_BYTES, otsTooBig);
+        const fileBytes = await readEntryGuarded(origEntries[0]!.entry, MAX_FILE_BYTES, origTooBig);
         verdict = await runVerify(fileBytes, otsBytes, origEntries[0]!.name, ots.name);
 
       } else if (vMode === 'vseparate') {

@@ -9,6 +9,7 @@ import puppeteer from 'puppeteer-core';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { readFileSync } from 'node:fs';
+import JSZip from 'jszip';
 
 const dist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../dist/index.html');
 const APP = 'file://' + dist;
@@ -122,6 +123,42 @@ try {
   check(await page.$eval('#zip-name', el => el.textContent !== 'huge.zip'),
         'oversized file was not accepted as input');
 
+  // ── Zip bomb: small compressed ZIP with a >100 MB original inside →
+  //    rejected before extraction ──
+  const bombZip = new JSZip();
+  const bombFolder = bombZip.folder('proof_bomb');
+  bombFolder.file('big.bin', new Uint8Array(100 * 1024 * 1024 + 1));   // 100 MB + 1 av nollor
+  bombFolder.file('big.bin.ots', readFileSync(path.join(
+    path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'fixtures'), 'hello-world.txt.ots')));
+  const bombBytes = await bombZip.generateAsync({
+    type: 'nodebuffer',
+    compression: 'DEFLATE',
+    compressionOptions: { level: 9 },
+  });
+  check(bombBytes.length < 100 * 1024 * 1024,
+        `outer bomb ZIP is small (${(bombBytes.length / 1024).toFixed(0)} KB) — inner entry check is what must catch it`);
+
+  const bombDialogsBefore = dialogs.length;
+  await page.evaluate(b64 => {
+    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const file = new File([bytes], 'bomb.zip', { type: 'application/zip' });
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    const ev = new DragEvent('drop', { bubbles: true });
+    Object.defineProperty(ev, 'dataTransfer', { value: dt });
+    document.getElementById('zip-drop').dispatchEvent(ev);
+  }, bombBytes.toString('base64'));
+  await page.click('#verify-btn');
+  for (let i = 0; i < 40 && dialogs.length === bombDialogsBefore; i++) {
+    await new Promise(r => setTimeout(r, 250));
+  }
+  check(dialogs.length > bombDialogsBefore &&
+        dialogs[dialogs.length - 1] ===
+          'The original file inside this ZIP is larger than 100 MB and cannot be verified in the browser.',
+        'zip bomb rejected before extraction with the exact message');
+  check(await page.$eval('#verify-btn', b => !b.disabled && b.textContent === 'Verify proof'),
+        'app still responsive after zip bomb rejection');
+
   // ── Anchored fixture (OpenTimestamps hello-world example) → full VERIFIED
   //    flow via File + OTS, then round-trip the repackaged proof ZIP ──
   const fixtureDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'fixtures');
@@ -151,6 +188,13 @@ try {
     () => document.querySelector('#vr-status-list .verdict-banner') ||
           document.querySelector('#vr-status-list .status.err'),
     { timeout: 90000 }
+  );
+  // Paket-ZIP:en byggs efter att bannern visats — vänta in spara-länken
+  // (den ska alltid erbjudas vid VERIFIED) innan länkstatus läses.
+  await page.waitForFunction(
+    () => !document.getElementById('vr-upgraded-link').classList.contains('hidden') ||
+          document.querySelector('#vr-status-list .status.err'),
+    { timeout: 15000 }
   );
   const fixture = await page.evaluate(() => ({
     banner: document.querySelector('#vr-status-list .verdict-banner')?.className || null,
