@@ -58,6 +58,7 @@ export interface VerifyPanel {
 
 type VMode = 'vzip' | 'vseparate' | 'vtext';
 type Verdict = 'verified' | 'pending' | 'failed' | 'error';
+type VerifyFileKind = 'zip' | 'ots' | 'other';
 
 // JSZip:s publika API exponerar inte okomprimerad storlek, men varje entry
 // från loadAsync bär ett internt CompressedObject med uncompressedSize.
@@ -81,6 +82,18 @@ async function readEntryGuarded(
   const bytes = new Uint8Array(await entry.async('arraybuffer'));
   if (bytes.byteLength > limit) throw new Error(message);
   return bytes;
+}
+
+function classifyVerifyFile(file: File): VerifyFileKind {
+  const name = file.name.toLowerCase();
+  const mime = file.type.toLowerCase();
+  if (name.endsWith('.zip') || mime === 'application/zip' || mime === 'application/x-zip-compressed') {
+    return 'zip';
+  }
+  if (name.endsWith('.ots')) {
+    return 'ots';
+  }
+  return 'other';
 }
 
 export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
@@ -142,6 +155,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
       zipPrompt.classList.remove('hidden');
       byId('zip-name').textContent = 'No ZIP selected';
       byId('zip-input', HTMLInputElement).value = '';
+      byId('zip-drop').classList.remove('has-file');
     }
     if (exceptMode !== 'vseparate') {
       vOrigFile = null; vOtsFile = null;
@@ -149,12 +163,15 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
       byId('vots-name').textContent  = 'Click or drag the .ots file here';
       byId('vorig-input', HTMLInputElement).value = '';
       byId('vots-input', HTMLInputElement).value  = '';
+      byId('vorig-drop').classList.remove('has-file');
+      byId('vots-drop').classList.remove('has-file');
     }
     if (exceptMode !== 'vtext') {
       vOtsTextFile = null;
       vtextInput.value = '';
       byId('vots-text-name').textContent = 'Click or drag the .ots file here';
       byId('vots-text-input', HTMLInputElement).value = '';
+      byId('vots-text-drop').classList.remove('has-file');
     }
   }
 
@@ -165,16 +182,21 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     clearVerifyResult();
   }
 
+  function selectVerifyMode(mode: VMode): void {
+    vMode = mode;
+    vtabs.forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.vtab === mode);
+    });
+    vzipPanel.classList.toggle('hidden',      mode !== 'vzip');
+    vseparatePanel.classList.toggle('hidden', mode !== 'vseparate');
+    vtextPanel.classList.toggle('hidden',     mode !== 'vtext');
+    updateVerifyBtn();
+  }
+
   vtabs.forEach(tab => {
     tab.addEventListener('click', () => {
-      vtabs.forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
       const m = tab.dataset.vtab;
-      vMode = m === 'vseparate' || m === 'vtext' ? m : 'vzip';
-      vzipPanel.classList.toggle('hidden',      vMode !== 'vzip');
-      vseparatePanel.classList.toggle('hidden', vMode !== 'vseparate');
-      vtextPanel.classList.toggle('hidden',     vMode !== 'vtext');
-      updateVerifyBtn();
+      selectVerifyMode(m === 'vseparate' || m === 'vtext' ? m : 'vzip');
     });
   });
 
@@ -191,6 +213,20 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
   ) {
     const nameEl = byId(nameId);
     const inputEl = byId(inputId, HTMLInputElement);
+
+    function acceptFile(targetMode: VMode, targetNameId: string, targetInputId: string, targetSetter: (f: File) => void, f: File): void {
+      verifyDone = false;
+      clearVerifyOthers(targetMode);
+      clearVerifyResult();
+      opts.onInputActivity();
+      targetSetter(f);
+      if (targetMode === 'vzip') zipPrompt.classList.add('hidden');
+      byId(targetNameId).textContent = f.name;
+      byId(targetInputId, HTMLInputElement).value = '';
+      byId(targetNameId.replace('-name', '-drop')).classList.add('has-file');
+      selectVerifyMode(targetMode);
+    }
+
     wireDrop(byId(dropId), inputEl, f => {
       if (!f) return;
       // Storleksgräns före arrayBuffer(): allt hashas och packas upp i minnet.
@@ -199,14 +235,27 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
         inputEl.value = '';
         return;
       }
-      verifyDone = false;
-      clearVerifyOthers(mode);
-      clearVerifyResult();
-      opts.onInputActivity();
-      setter(f);
-      if (mode === 'vzip') zipPrompt.classList.add('hidden');
-      nameEl.textContent = f.name;
-      updateVerifyBtn();
+
+      const kind = classifyVerifyFile(f);
+      if (kind === 'zip') {
+        acceptFile('vzip', 'zip-name', 'zip-input', file => { vZipFile = file; }, f);
+        return;
+      }
+      if (kind === 'ots') {
+        if (mode === 'vtext') {
+          acceptFile('vtext', 'vots-text-name', 'vots-text-input', file => { vOtsTextFile = file; }, f);
+        } else {
+          acceptFile('vseparate', 'vots-name', 'vots-input', file => { vOtsFile = file; }, f);
+        }
+        return;
+      }
+
+      if (mode === 'vtext') {
+        acceptFile('vseparate', 'vorig-name', 'vorig-input', file => { vOrigFile = file; }, f);
+        return;
+      }
+
+      acceptFile('vseparate', 'vorig-name', 'vorig-input', file => { vOrigFile = file; }, f);
     });
   }
 

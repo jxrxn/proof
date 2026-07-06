@@ -94,6 +94,50 @@ try {
     check(!verify.btnDisabled, 'verify button re-enabled for retry on pending');
   }
 
+  const fixtureDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'fixtures');
+  const origB64 = readFileSync(path.join(fixtureDir, 'hello-world.txt')).toString('base64');
+  const otsB64  = readFileSync(path.join(fixtureDir, 'hello-world.txt.ots')).toString('base64');
+
+  // ── Type-aware rerouting: dropping an .ots onto the default ZIP zone should
+  //    switch to File + OTS and place the file in the OTS slot ──
+  await page.click('.vtab[data-vtab="vzip"]');
+  await page.evaluate(otsB64 => {
+    const bytes = Uint8Array.from(atob(otsB64), c => c.charCodeAt(0));
+    const file = new File([bytes], 'hello-world.txt.ots');
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    const ev = new DragEvent('drop', { bubbles: true });
+    Object.defineProperty(ev, 'dataTransfer', { value: dt });
+    document.getElementById('zip-drop').dispatchEvent(ev);
+  }, otsB64);
+  const rerouteToOts = await page.evaluate(() => ({
+    active: document.querySelector('.vtab.active')?.getAttribute('data-vtab'),
+    otsName: document.getElementById('vots-name').textContent,
+    zipName: document.getElementById('zip-name').textContent,
+  }));
+  check(rerouteToOts.active === 'vseparate', 'dropping .ots on ZIP zone switches to File + OTS');
+  check(rerouteToOts.otsName === 'hello-world.txt.ots', 'dropped .ots is shown in the OTS slot');
+  check(rerouteToOts.zipName === 'No ZIP selected', 'wrong drop does not stay in the ZIP slot');
+
+  // ── In Text + OTS mode, dropping an .ots should stay in that mode and fill
+  //    the text proof slot ──
+  await page.click('.vtab[data-vtab="vtext"]');
+  await page.evaluate(otsB64 => {
+    const bytes = Uint8Array.from(atob(otsB64), c => c.charCodeAt(0));
+    const file = new File([bytes], 'hello-world.txt.ots');
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    const ev = new DragEvent('drop', { bubbles: true });
+    Object.defineProperty(ev, 'dataTransfer', { value: dt });
+    document.getElementById('vots-text-drop').dispatchEvent(ev);
+  }, otsB64);
+  const textOts = await page.evaluate(() => ({
+    active: document.querySelector('.vtab.active')?.getAttribute('data-vtab'),
+    otsName: document.getElementById('vots-text-name').textContent,
+  }));
+  check(textOts.active === 'vtext', 'dropping .ots in Text + OTS mode keeps that mode active');
+  check(textOts.otsName === 'hello-world.txt.ots', 'dropped .ots is shown in the text proof slot');
+
   // ── Corrupt ZIP → inline load error, retry possible ──
   await page.evaluate(() => {
     const file = new File([new Uint8Array([1, 2, 3, 4])], 'broken.zip', { type: 'application/zip' });
@@ -161,10 +205,6 @@ try {
 
   // ── Anchored fixture (OpenTimestamps hello-world example) → full VERIFIED
   //    flow via File + OTS, then round-trip the repackaged proof ZIP ──
-  const fixtureDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'fixtures');
-  const origB64 = readFileSync(path.join(fixtureDir, 'hello-world.txt')).toString('base64');
-  const otsB64  = readFileSync(path.join(fixtureDir, 'hello-world.txt.ots')).toString('base64');
-
   await page.click('.vtab[data-vtab="vseparate"]');
   await page.evaluate((origB64, otsB64) => {
     const toFile = (b64, name) => {
