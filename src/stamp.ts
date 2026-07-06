@@ -52,6 +52,7 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
     selectedFile = null;
     fileNameEl.textContent = 'No file selected';
     dropPrompt.classList.remove('hidden');
+    drop.classList.remove('has-file');
     textInput.value = '';
     fileInput.value = '';
     updateStampBtn();
@@ -91,6 +92,7 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
     selectedFile = f;
     fileNameEl.textContent = f ? f.name : 'No file selected';
     dropPrompt.classList.toggle('hidden', f !== null);
+    drop.classList.toggle('has-file', f !== null);
     clearDownload();
     if (f) opts.onInputActivity();
     updateStampBtn();

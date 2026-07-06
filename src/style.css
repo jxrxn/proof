@@ -177,14 +177,27 @@ html, body {
 .drop p { margin: 2px 0; }
 .drop strong { color: var(--text); }
 #create-proof-card .drop.over,
-#stamp-input-card .drop.over { background: #13253a; color: var(--text); }
+#stamp-input-card .drop.over { background: #10263d; color: var(--text); }
 /* Samma riktning (135deg) och tjocklek som de bleka ränderna före hover,
-   bara med den ljusare hover-färgen. create-proof har 12px-ränder (period 24px),
+   men utan att tända upp lika mycket. create-proof har 12px-ränder (period 24px),
    stamp/verify har 6px-ränder (period 12px). */
-#create-proof-card .drop.over::before { background: repeating-linear-gradient(135deg, transparent, transparent 12px, var(--blue-light) 12px, var(--blue-light) 24px); }
-#stamp-input-card .drop.over::before { background: repeating-linear-gradient(135deg, transparent, transparent 6px, var(--blue-light) 6px, var(--blue-light) 12px); }
-#verify-input-card .drop.over { background: #33230d; color: var(--text); }
-#verify-input-card .drop.over::before { background: repeating-linear-gradient(135deg, transparent, transparent 6px, var(--orange-light) 6px, var(--orange-light) 12px); }
+#create-proof-card .drop.over::before { background: repeating-linear-gradient(135deg, transparent, transparent 12px, rgba(136, 199, 255, 0.2) 12px, rgba(136, 199, 255, 0.2) 24px); }
+#stamp-input-card .drop.over::before { background: repeating-linear-gradient(135deg, transparent, transparent 6px, rgba(136, 199, 255, 0.2) 6px, rgba(136, 199, 255, 0.2) 12px); }
+#verify-input-card .drop.over { background: #2b1d0b; color: var(--text); }
+#verify-input-card .drop.over::before { background: repeating-linear-gradient(135deg, transparent, transparent 6px, rgba(255, 184, 77, 0.2) 6px, rgba(255, 184, 77, 0.2) 12px); }
+.drop.has-file {
+  color: var(--text);
+}
+#stamp-input-card .drop.has-file {
+  background: rgba(136, 199, 255, 0.2);
+}
+#verify-input-card .drop.has-file {
+  background: rgba(255, 184, 77, 0.2);
+}
+#stamp-input-card .drop.has-file::before,
+#verify-input-card .drop.has-file::before {
+  opacity: 0;
+}
 /* Animera ränderna så de glider jämnt i en sömlös loop.
    För 135deg-mönstret gör en bakgrundsruta på period * √2 att mönstret kan
    upprepas sömlöst, och vi flyttar bakgrunden exakt en period per varv. */
