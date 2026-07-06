@@ -304,6 +304,15 @@ button.primary.verify-btn:disabled { background: #2c2c30; border-color: var(--or
 /* ── Meta rows ── */
 .meta { font-size: 0.8rem; color: var(--muted); margin: 3px 0; }
 
+/* ── Package contents list ── */
+.package-contents {
+  margin: 4px 0 6px;
+  padding-left: 20px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.package-contents li { margin: 2px 0; }
+
 /* ── Status — no background, just color ── */
 .status {
   padding: 3px 0;

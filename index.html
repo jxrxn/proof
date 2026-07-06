@@ -93,11 +93,17 @@
     <div class="card-title">Saved proof package</div>
     <div id="result-empty" class="empty-state">Create a proof to see its hash and save it here.</div>
     <div id="result-content" class="hidden">
-      <div class="result-title">Saved proof package</div>
+      <div class="result-title">Package created</div>
       <div class="meta" id="result-name"></div>
       <div class="meta" id="result-time"></div>
       <div class="meta" id="result-size"></div>
-      <div class="meta">Includes the original file, its SHA-256 hash, and the initial proof (.ots — no Bitcoin verification data yet).</div>
+      <div class="meta">This package contains:</div>
+      <ul class="package-contents">
+        <li>A copy of your original file</li>
+        <li>SHA-256 fingerprint</li>
+        <li>OpenTimestamps proof (.ots)</li>
+        <li>Metadata (filename and creation time)</li>
+      </ul>
       <div class="result-label">SHA-256</div>
       <div class="hash" id="result-hash"></div>
       <div id="status-list"></div>
