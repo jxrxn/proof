@@ -25,7 +25,12 @@
         <button class="tab active" data-tab="file">File</button>
         <button class="tab" data-tab="text">Text</button>
       </div>
-      <div class="helper-text">Create a proof from a file or a short piece of text. Only a SHA-256 hash is submitted — your file or text never leaves your device. Files up to 100&nbsp;MB.</div>
+      <div class="helper-text">
+        Create a proof from a file or a short piece of text. Only a SHA-256 digest is submitted — your file or text never leaves your device.
+        Large files are supported when saving a proof file (.ots).
+        Proof packages include the original file and are currently limited to 100&nbsp;MB.
+      </div>
+      <div class="mode-note" id="package-capability-copy"></div>
 
       <div id="file-panel">
         <input type="file" id="file-input">
@@ -40,6 +45,12 @@
       </div>
     </div>
 
+    <div class="operation-ui hidden" id="stamp-operation" data-state="idle">
+      <div class="operation-text" id="stamp-operation-text" role="status" aria-live="polite"></div>
+      <progress class="operation-progress hidden" id="stamp-operation-progress" max="1" value="0"></progress>
+      <button class="secondary operation-cancel hidden" id="stamp-operation-cancel">Cancel</button>
+    </div>
+
     <button class="primary" id="generate" disabled>Create Proof</button>
   </div>
 
@@ -48,13 +59,19 @@
     <div class="card-title">Verify proof</div>
     <div class="input-card-main">
       <div class="tabs">
-        <button class="vtab active" data-vtab="vzip">Proof package</button>
-        <button class="vtab" data-vtab="vseparate">File + OTS</button>
+        <button class="vtab active" data-vtab="vseparate">Verify original file + .ots</button>
+        <button class="vtab" data-vtab="vzip">Verify proof package (.zip)</button>
         <button class="vtab" data-vtab="vtext">Text + OTS</button>
       </div>
-      <div class="helper-text">Verify a saved proof package (ZIP), or match an original file or text with its proof file (.ots). Files up to 100&nbsp;MB.</div>
+      <div class="helper-text">
+        For large files, use the original file and its .ots proof.
+        Proof package verification is currently limited to 100&nbsp;MB.
+        Proof packages include the original file.
+      </div>
+      <div class="mode-note" id="verify-package-capability-copy"></div>
 
-      <div id="vzip-panel">
+      <div id="vzip-panel" class="hidden">
+        <div class="mode-note" id="verify-package-mode-note">Secondary option: verify a ZIP package that already includes the original file.</div>
         <input type="file" id="zip-input" accept=".zip">
         <label for="zip-input" class="drop" id="zip-drop">
           <p id="zip-prompt"><strong>Drop the proof package (ZIP) here</strong></p>
@@ -62,7 +79,8 @@
         </label>
       </div>
 
-      <div id="vseparate-panel" class="hidden">
+      <div id="vseparate-panel">
+        <div class="mode-note">Primary option: verify the original file directly, without packaging it into a ZIP.</div>
         <div class="drop-label">Original file</div>
         <input type="file" id="vorig-input">
         <label for="vorig-input" class="drop compact" id="vorig-drop">
@@ -85,28 +103,39 @@
       </div>
     </div>
 
+    <div class="operation-ui hidden" id="verify-operation" data-state="idle">
+      <div class="operation-text" id="verify-operation-text" role="status" aria-live="polite"></div>
+      <progress class="operation-progress hidden" id="verify-operation-progress" max="1" value="0"></progress>
+      <button class="secondary operation-cancel hidden" id="verify-operation-cancel">Cancel</button>
+    </div>
+
     <button class="primary verify-btn" id="verify-btn" disabled>Verify proof</button>
   </div>
 
   <!-- ── Stamp result ── -->
   <div class="card proof" id="result-card">
-    <div class="card-title">Saved proof package</div>
-    <div id="result-empty" class="empty-state">Create a proof to see its hash and save it here.</div>
+    <div class="card-title">Created proof</div>
+    <div id="result-empty" class="empty-state">Create a proof to see its hash and save the proof file (.ots) here.</div>
     <div id="result-content" class="hidden">
-      <div class="result-title">Package created</div>
+      <div class="result-title">Initial proof created</div>
       <div class="meta" id="result-name"></div>
       <div class="meta" id="result-time"></div>
       <div class="meta" id="result-size"></div>
-      <div class="meta">This package contains:</div>
+      <div class="meta">Default and large-file-safe download: proof file (.ots)</div>
+      <div class="meta" id="result-package-mode">Optional secondary download: proof package (.zip, includes original file)</div>
+      <div class="meta">A proof package contains:</div>
       <ul class="package-contents">
         <li>A copy of your original file</li>
         <li>SHA-256 fingerprint</li>
-        <li>OpenTimestamps proof (.ots)</li>
+        <li>Initial OpenTimestamps proof (.ots)</li>
         <li>Metadata (filename and creation time)</li>
       </ul>
       <div class="result-label">SHA-256</div>
       <div class="hash" id="result-hash"></div>
       <div id="status-list" role="status" aria-live="polite"></div>
+      <a class="download solid hidden" id="proof-link">Save proof file (.ots)</a>
+      <p class="helper-note">Large files are supported when saving a proof file (.ots).</p>
+      <p class="share-warning hidden" id="package-note">Proof packages include the original file and are currently limited to 100 MB. Save the .ots proof file instead.</p>
       <p class="share-warning hidden" id="download-warning">Warning: this ZIP contains the original file. Anyone you send the ZIP to can open the original.</p>
       <a class="download hidden" id="download-link">Save proof package (.zip, includes original file)</a>
       <details>
@@ -129,6 +158,8 @@
       <div class="result-label">SHA-256 (created locally from your file)</div>
       <div class="hash" id="vr-hash"></div>
       <div id="vr-status-list" role="status" aria-live="polite"></div>
+      <p class="helper-note">For large files, verify the original file together with its .ots proof.</p>
+      <p class="share-warning hidden" id="vr-package-note">Proof packages are unavailable in this browser/app mode. Save the .ots proof file instead.</p>
       <p class="share-warning hidden" id="vr-download-warning">Warning: this ZIP contains the original file. Anyone you send the ZIP to can open the original.</p>
       <a class="download solid hidden" id="vr-upgraded-link">Save proof package (.zip, includes original file)</a>
     </div>

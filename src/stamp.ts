@@ -1,20 +1,27 @@
 import { byId, createStatusList, wireDrop } from './lib/dom';
+import { createOperationUi } from './lib/operationUi';
+import { hashBlobStreaming } from './lib/hash';
+import { hashBlobInWorker } from './lib/hashWorkerClient';
+import { detectPackageCapability } from './lib/packageCapability';
 import { buildProofZip } from './lib/proofPackage';
 import {
   sha256Hex, formatBytes, formatTimestamp, errorMessage, withTimeout,
-  MAX_FILE_BYTES, fileTooLargeMessage,
 } from './lib/util';
 import { getOts, reachableCalendars, detachedFromHashHex } from './lib/ots';
+import { throwIfSignalAborted } from './lib/hashShared';
 
 export interface StampPanel {
   /** Nollställer hela skapa-sidan (input, statusar, resultatkort, nedladdningslänk). */
   resetPanel(): void;
+  refreshPackageCapability(): void;
 }
 
 export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
   let mode: 'file' | 'text' = 'file';
   let selectedFile: File | null = null;
-  let currentDownloadUrl: string | null = null;
+  let currentProofUrl: string | null = null;
+  let currentPackageUrl: string | null = null;
+  let currentHashAbort: AbortController | null = null;
 
   const tabs            = document.querySelectorAll<HTMLButtonElement>('.tab');
   const filePanel       = byId('file-panel');
@@ -24,27 +31,67 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
   const drop            = byId('drop');
   const textInput       = byId('text-input', HTMLTextAreaElement);
   const generateBtn     = byId('generate', HTMLButtonElement);
+  const proofLink       = byId('proof-link', HTMLAnchorElement);
   const downloadLink    = byId('download-link', HTMLAnchorElement);
   const downloadWarning = byId('download-warning');
+  const packageNote     = byId('package-note');
+  const packageCapabilityCopy = byId('package-capability-copy');
+  const packageModeEl   = byId('result-package-mode');
   const dropPrompt      = byId('drop-prompt');
   const resultContent   = byId('result-content');
   const resultEmpty     = byId('result-empty');
+  const cancelBtn       = byId('stamp-operation-cancel', HTMLButtonElement);
 
   const status = createStatusList(byId('status-list'), 's-');
+  const operationUi = createOperationUi('stamp');
+  let packageCapability = detectPackageCapability();
 
   function showResultContent() { resultContent.classList.remove('hidden'); resultEmpty.classList.add('hidden'); }
   function hideResultContent() { resultContent.classList.add('hidden');    resultEmpty.classList.remove('hidden'); }
+
+  function applyPackageCapabilityCopy(): void {
+    if (packageCapability.supported) {
+      packageCapabilityCopy.textContent =
+        `Optional secondary download: proof package (.zip, includes original file) for files up to ${Math.round(packageCapability.maxBytes / 1048576)} MB in this browser.`;
+      packageModeEl.textContent =
+        'Optional secondary download: proof package (.zip, includes original file)';
+      return;
+    }
+
+    packageCapabilityCopy.textContent =
+      packageCapability.reason ??
+      'Proof packages are unavailable in this browser/app mode. Save the .ots proof file instead.';
+    packageModeEl.textContent =
+      'Secondary download unavailable in this browser/app mode: save the proof file (.ots) instead.';
+  }
+
+  function refreshPackageCapability(): void {
+    packageCapability = detectPackageCapability();
+    applyPackageCapabilityCopy();
+  }
 
   function updateStampBtn() {
     generateBtn.disabled = mode === 'file' ? selectedFile === null : textInput.value.trim() === '';
   }
 
   function clearDownload() {
+    proofLink.classList.add('hidden');
     downloadLink.classList.add('hidden');
     downloadWarning.classList.add('hidden');
-    if (currentDownloadUrl) {
-      URL.revokeObjectURL(currentDownloadUrl);
-      currentDownloadUrl = null;
+    packageNote.classList.add('hidden');
+    if (currentProofUrl) {
+      URL.revokeObjectURL(currentProofUrl);
+      currentProofUrl = null;
+    }
+    if (currentPackageUrl) {
+      URL.revokeObjectURL(currentPackageUrl);
+      currentPackageUrl = null;
+    }
+  }
+
+  function clearResultMeta() {
+    for (const id of ['result-name', 'result-time', 'result-size', 'result-hash']) {
+      byId(id).textContent = '';
     }
   }
 
@@ -62,14 +109,13 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
     resetStampInput();
     clearDownload();
     hideResultContent();
+    clearResultMeta();
     status.clear();
+    operationUi.reset();
   }
 
   function resetAll() {
     resetPanel();
-    for (const id of ['result-name', 'result-time', 'result-size', 'result-hash']) {
-      byId(id).textContent = '';
-    }
   }
 
   tabs.forEach(tab => {
@@ -84,11 +130,15 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
   });
 
   textInput.addEventListener('input', () => {
+    // Ny input avbryter en pågående operation så att den aldrig hinner
+    // skriva resultat som ser ut att höra till den nya inmatningen.
+    currentHashAbort?.abort();
     opts.onInputActivity();
     updateStampBtn();
   });
 
   function setNewFile(f: File | null) {
+    currentHashAbort?.abort();
     selectedFile = f;
     fileNameEl.textContent = f ? f.name : 'No file selected';
     dropPrompt.classList.toggle('hidden', f !== null);
@@ -99,43 +149,85 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
   }
 
   wireDrop(drop, fileInput, f => {
-    // Storleksgräns före arrayBuffer(): allt hashas och paketeras i minnet.
-    if (f && f.size > MAX_FILE_BYTES) {
-      alert(fileTooLargeMessage(f));
-      fileInput.value = '';
-      f = null;
-    }
     setNewFile(f);
   });
+
+  refreshPackageCapability();
+
+  cancelBtn.addEventListener('click', () => {
+    currentHashAbort?.abort();
+  });
+
+  async function hashForStamp(
+    source: Blob,
+    signal: AbortSignal,
+    onProgress: (fraction: number) => void,
+  ): Promise<string> {
+    const options = {
+      signal,
+      onProgress: (progress: { fraction: number }) => onProgress(progress.fraction),
+    };
+    try {
+      return await hashBlobInWorker(source, options);
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw error;
+      }
+      return hashBlobStreaming(source, options);
+    }
+  }
 
   generateBtn.addEventListener('click', async () => {
     generateBtn.disabled = true;
     generateBtn.textContent = 'Working…';
     status.clear();
     clearDownload();
+    hideResultContent();
+    clearResultMeta();
+    operationUi.reset();
+    // En controller för HELA operationen (hash → stamp → paket), inte bara
+    // hashningen: ny input eller cancel avbryter vid nästa checkpoint.
+    currentHashAbort = new AbortController();
+    const opSignal = currentHashAbort.signal;
 
     try {
-      let data: Uint8Array<ArrayBuffer>, originalName: string, mimeContent: Blob;
+      let hashHex: string, size: number, originalName: string, mimeContent: Blob;
       const now = new Date();
       const iso = now.toISOString();
       const stamp = iso.replace(/[:.]/g, '-').slice(0, 19);
 
       if (mode === 'file') {
         if (!selectedFile) { alert('Please select a file first.'); return; }
-        data = new Uint8Array(await selectedFile.arrayBuffer());
         originalName = selectedFile.name;
         mimeContent = selectedFile;
+        size = selectedFile.size;
+        operationUi.set({
+          state: 'hashing',
+          message: 'Hashing file locally… 0%',
+          progress: 0,
+          cancelVisible: true,
+          cancelEnabled: true,
+        });
+        status.set('hash', 'Hashing file locally…', 'info');
+        hashHex = await hashForStamp(selectedFile, opSignal, fraction => {
+          operationUi.set({
+            state: 'hashing',
+            message: `Hashing file locally… ${Math.round(fraction * 100)}%`,
+            progress: fraction,
+            cancelVisible: true,
+            cancelEnabled: true,
+          });
+        });
       } else {
         const text = textInput.value.trim();
         if (!text) { alert('Please enter some text first.'); return; }
-        data = new TextEncoder().encode(text);
         originalName = 'text.txt';
         mimeContent = new Blob([text], { type: 'text/plain' });
+        const data = new TextEncoder().encode(text);
+        size = data.byteLength;
+        hashHex = await sha256Hex(data);
       }
-
-      status.set('hash', 'Creating SHA-256 hash on your device…', 'info');
-      const hashHex = await sha256Hex(data);
-      const size = data.byteLength;
+      throwIfSignalAborted(opSignal);
 
       byId('result-name').textContent = 'File: ' + originalName;
       byId('result-time').textContent = 'Created: ' + formatTimestamp(now);
@@ -143,15 +235,24 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
       byId('result-hash').textContent = hashHex;
       showResultContent();
       status.set('hash', 'SHA-256 created locally. Your original file was not uploaded.', 'ok');
+      operationUi.set({
+        state: 'stamping',
+        message: 'Sending SHA-256 digest to OpenTimestamps…',
+        progress: null,
+        cancelVisible: false,
+        cancelEnabled: false,
+      });
 
       const OTS = getOts();
 
-      status.set('ots', 'Submitting the hash to OpenTimestamps…', 'info');
+      status.set('ots', 'Sending SHA-256 digest to OpenTimestamps…', 'info');
       // detachedFromHashHex tar bara digesten — filinnehållet lämnar aldrig appen.
       const detached = detachedFromHashHex(hashHex);
       const calendars = await reachableCalendars();
+      throwIfSignalAborted(opSignal);
       await withTimeout(OTS.stamp(detached, { calendars }), 30000,
         'OpenTimestamps calendar servers did not respond. Please try again in a little while.');
+      throwIfSignalAborted(opSignal);
       const otsBytes = detached.serializeToBytes();
       status.set('ots', 'Hash submitted to OpenTimestamps. You now have an initial proof (.ots) — Bitcoin anchoring usually completes within 1–6 hours.', 'ok');
 
@@ -160,7 +261,6 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
       // att de hör till samma tidsstämpling.
       const folderName       = 'proof_' + stamp;
       const initialProofName = folderName + '_initial.ots';
-      const otsProofName     = folderName + '_opentimestamps.ots';
       const readme = `SHA-256 hash + OpenTimestamps
 ================================
 Filename:   ${originalName}
@@ -190,7 +290,7 @@ Turn the initial proof into an OpenTimestamps proof (requires opentimestamps-cli
   pip install opentimestamps-client
   ots upgrade "${initialProofName}"   # wait 1-6 hours for Bitcoin anchoring first
   ots verify -f "${originalName}" "${initialProofName}"
-  # then keep it as ${otsProofName}
+  # then keep it as ${folderName}_opentimestamps.ots
 
 Or verify online:
   https://opentimestamps.org
@@ -209,26 +309,84 @@ How this proof works (4 stages):
    without trusting you, me, or OpenTimestamps.
 `;
 
-      const blob = await buildProofZip({
-        folderName,
-        originalName,
-        original: mimeContent,
-        hashHex,
-        otsFileName: initialProofName,
-        otsBytes,
-        readme,
+      const proofBytes = new Uint8Array(otsBytes.length);
+      proofBytes.set(otsBytes);
+      currentProofUrl = URL.createObjectURL(new Blob([proofBytes.buffer], { type: 'application/octet-stream' }));
+      proofLink.href = currentProofUrl;
+      proofLink.download = initialProofName;
+      proofLink.classList.remove('hidden');
+
+      if (packageCapability.supported && size <= packageCapability.maxBytes) {
+        operationUi.set({
+          state: 'packaging',
+          message: 'Creating proof package…',
+          progress: null,
+          cancelVisible: false,
+          cancelEnabled: false,
+        });
+        const blob = await buildProofZip({
+          folderName,
+          originalName,
+          original: mimeContent,
+          hashHex,
+          otsFileName: initialProofName,
+          otsBytes,
+          readme,
+        });
+        throwIfSignalAborted(opSignal);
+        currentPackageUrl = URL.createObjectURL(blob);
+        downloadLink.href = currentPackageUrl;
+        downloadLink.download = folderName + '.zip';
+        downloadLink.classList.remove('hidden');
+        downloadWarning.classList.remove('hidden');
+      } else if (!packageCapability.supported) {
+        packageNote.textContent =
+          packageCapability.reason ??
+          'Proof packages are unavailable in this browser/app mode. Save the .ots proof file instead.';
+        packageNote.classList.remove('hidden');
+      } else {
+        packageNote.textContent =
+          `Proof packages include the original file and are currently limited to ${Math.round(packageCapability.maxBytes / 1048576)} MB. Save the .ots proof file instead.`;
+        packageNote.classList.remove('hidden');
+      }
+
+      operationUi.set({
+        state: 'done',
+        message: 'Initial proof created. Save the .ots proof file.',
+        progress: null,
+        cancelVisible: false,
+        cancelEnabled: false,
       });
-      currentDownloadUrl = URL.createObjectURL(blob);
-      downloadLink.href = currentDownloadUrl;
-      downloadLink.download = folderName + '.zip';
-      downloadLink.classList.remove('hidden');
-      downloadWarning.classList.remove('hidden');
       resetStampInput();
 
     } catch (err) {
-      console.error(err);
-      status.set('err', 'Error: ' + errorMessage(err), 'err');
+      if (err instanceof Error && err.name === 'AbortError') {
+        clearDownload();
+        hideResultContent();
+        clearResultMeta();
+        status.clear();
+        status.set('hash', 'Operation cancelled.', 'warn');
+        operationUi.set({
+          state: 'cancelled',
+          message: 'Operation cancelled.',
+          progress: null,
+          cancelVisible: false,
+          cancelEnabled: false,
+        });
+      } else {
+        clearDownload();
+        console.error(err);
+        status.set('err', 'Error: ' + errorMessage(err), 'err');
+        operationUi.set({
+          state: 'error',
+          message: 'Error: ' + errorMessage(err),
+          progress: null,
+          cancelVisible: false,
+          cancelEnabled: false,
+        });
+      }
     } finally {
+      currentHashAbort = null;
       updateStampBtn();
       generateBtn.textContent = 'Create Proof';
     }
@@ -240,5 +398,5 @@ How this proof works (4 stages):
     }, 400);
   });
 
-  return { resetPanel };
+  return { resetPanel, refreshPackageCapability };
 }

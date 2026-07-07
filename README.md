@@ -1,53 +1,149 @@
 # Proof — Bitcoin Timestamp
 
 Tidsstämpla text eller filer via [OpenTimestamps](https://opentimestamps.org/).
-En SHA-256-hash skapas lokalt och bara hashen skickas till OpenTimestamps
-kalenderservrar, som ankrar den i Bitcoin-blockkedjan.
+Appen skapar SHA-256 lokalt i webbläsaren och skickar bara digesten till
+OpenTimestamps. Originalfilen lämnar inte appen när du sparar eller verifierar
+ett vanligt `.ots`-bevis.
+
+## v0.2-beta i korthet
+
+- **Primärt flöde:** spara och verifiera en separat proof file (`.ots`).
+- **Stora filer:** stöds i kärnflödet `original file + .ots` via streamad,
+  chunkad SHA-256-hashning.
+- **Sekundärt flöde:** proof package (`.zip`) är valfritt, begränsat och
+  capability-aware.
+- **Integritet:** OpenTimestamps får bara 32-byte SHA-256-digesten, aldrig
+  originalfilens bytes eller filnamn.
+- **Distribution:** bygget producerar en enda självbärande `dist/index.html`
+  som fungerar från `file://`.
 
 ## Utveckling
 
 ```bash
 npm install
 npm run dev        # dev-server med hot reload
-npm run build      # typkoll + bygge → dist/index.html (en enda självbärande fil)
+npm run build      # typkoll + bygge → dist/index.html
+npm run test:unit  # unit-tester för lågnivåmoduler
 npm run e2e        # end-to-end-röktest i Chrome mot dist/ (kräver nätverk)
 ```
 
 Bygget producerar **en enda HTML-fil** (`dist/index.html`) med all JS/CSS
-inbakad — den fungerar direkt från `file://` och gör inga CDN-anrop.
-Distribuera genom att kopiera/maila den filen.
+inbakad. Ingen separat worker-fil, `.wasm`-fil eller CDN-resurs krävs.
+
+## Användning
+
+### Save proof file (`.ots`)
+
+Det här är standardflödet.
+
+- `.ots`-filen innehåller **inte** originalfilen.
+- `.ots`-filen innehåller ett OpenTimestamps-bevis för filens SHA-256-digest.
+- Stora filer stöds här, eftersom originalfilen hashas lokalt i chunks i
+  stället för att läsas in helt i minnet på en gång.
+
+### Create proof package (`.zip, includes original file`)
+
+Det här är ett sekundärt, valfritt flöde.
+
+- ZIP-paketet innehåller **en kopia av originalfilen**.
+- ZIP-paketet innehåller också `.ots`, SHA-256-hash och metadata/README.
+- ZIP-paket är för närvarande **begränsade till 100 MB** och använder en
+  buffer-baserad ZIP-modell i webbläsaren.
+- Appen erbjuder bara package-flödet när nuvarande browser/app-läge klarar det
+  säkert enligt `src/lib/packageCapability.ts`.
+
+## Verifiering
+
+### Verify original file + `.ots`
+
+Det här är det primära verify-flödet.
+
+- Rekommenderas för stora filer.
+- Originalfilen hashas lokalt med streamad SHA-256.
+- OpenTimestamps-verifieringen arbetar vidare från `hashHex + .ots`, inte från
+  originalfilens bytes.
+
+### Verify proof package (`.zip`)
+
+Det här är ett sekundärt verify-flöde.
+
+- ZIP-paket innehåller originalfilen.
+- ZIP-verifiering är för närvarande **begränsad till 100 MB**.
+- ZIP-bombskydd finns kvar: i normal drift kontrolleras ZIP-entry-storlekar
+  före uppackning när JSZip exponerar okomprimerad storlek. En guardad fallback
+  upprätthåller samma gränser efter uppackning om metadata saknas.
+- `.ots`-entryn har en separat gräns på 10 MB (`MAX_OTS_BYTES`).
+
+## Integritet och nätverk
+
+### Vad som aldrig skickas till OpenTimestamps
+
+- originalfilens bytes
+- originalfilens filnamn
+- ZIP-paketets innehåll
+
+### Vad som skickas
+
+- en SHA-256-digest på 32 byte
+
+### Externa nätverksanrop
+
+- Vid skapande skickas digesten till svarande OpenTimestamps-kalendrar via
+  deras `/digest`-endpoints.
+- Vid verifiering/upgrade kan OpenTimestamps-biblioteket kontakta kalendrar för
+  att hämta ny verification data.
+- Vid full verifiering kontaktar OpenTimestamps även sin Bitcoin-header-källa
+  för att verifiera anchoring.
+- Appen anropar inte externa blockutforskar-API:er för att visa blockhöjd eller
+  tid i resultatet.
+
+## Browserstöd och begränsningar
+
+### Rekommenderat
+
+- Chrome och Edge: bäst testade för både build och e2e.
+- Firefox: bör fungera för kärnflödet `.ots`, men bör regressions-testas manuellt.
+
+### Att verifiera extra noga
+
+- Safari: worker-/Blob-/CSP-kombinationen bör testas manuellt innan bred
+  distribution, även om single-file-modellen bevaras.
+- Strikt CSP: workerns inline Blob-modell och WebAssembly-kompilering behöver
+  verifieras i målmiljön om appen senare bäddas in i en låst host.
+
+### Nuvarande produktgränser
+
+- `.ots`-flödet är storfilssäkert i v0.2-beta.
+- ZIP/package-flödet är **inte** obegränsat och använder fortfarande en
+  buffer-baserad modell med 100 MB-gräns.
+- README lovar alltså inte streaming-ZIP eller obegränsade package-filer.
 
 ## Struktur
 
 - `index.html` — markup (Vite-entry)
 - `src/main.ts` — kopplar ihop panelerna
-- `src/stamp.ts` — skapa bevis (hash → OpenTimestamps → ZIP-paket)
-- `src/verify.ts` — verifiera bevis (ZIP / fil+OTS / text+OTS)
-- `src/lib/` — hjälpfunktioner (hash, DOM, OTS-lager med kalendersondering)
+- `src/stamp.ts` — skapa bevis
+- `src/verify.ts` — verifiera bevis
+- `src/lib/hash.ts` — streamad/chunkad SHA-256 i main thread
+- `src/lib/hashWorkerClient.ts` — worker-klient för hashning
+- `src/lib/packageCapability.ts` — capability/policy för proof package
+- `src/lib/ots.ts` — digest-only-gräns mot OpenTimestamps
 - `src/vendor/opentimestamps.min.js` — vendrad OpenTimestamps-bundle v0.4.9
-  (UMD, sätter `window.OpenTimestamps`; typad i `src/types/opentimestamps.d.ts`)
-- `test/fixtures/` — OpenTimestamps officiella hello-world-exempel (ankrat i
-  Bitcoin-block #358391), låter e2e-testet täcka hela VERIFIED-flödet
-- `legacy/proof.html` — den gamla enfilsversionen. Arkiverad och ouppdaterad;
-  använd inte den som app, den finns bara som historisk referens.
+- `test/fixtures/` — officiellt hello-world-exempel för VERIFIED-flödet
+- `legacy/proof.html` — gammal arkiverad version; använd inte den som app
 
-## Noteringar
+## Tekniska noteringar
 
-- Bibliotekets `stamp()` väntar på alla kalenderservrar utan timeout, därför
-  sonderar `src/lib/ots.ts` först vilka servrar som svarar på POST `/digest`
-  och skickar bara till dem. Alla OTS-anrop har dessutom 30 s timeout-skydd.
-- Kalendrarnas `/timestamp`-endpoints saknar ibland CORS-headers (särskilt
-  före ankring), så uppgradering i webbläsaren kan misslyckas mjukt —
-  verifieringen visar då korrekt "pending".
-- **Integritet:** `detachedFromHashHex()` i `src/lib/ots.ts` är gränssnittet
-  mot OpenTimestamps — den tar enbart SHA-256-digesten, aldrig filinnehållet.
-  Inga blockutforskar-API:er anropas vid verifiering (BlockCypher borttagen);
-  det biblioteket självt kontaktar är kalenderservrarna och Bitcoin-header-
-  källan som ingår i OpenTimestamps-verifieringen.
-- **Filstorleksgräns:** 100 MB (`MAX_FILE_BYTES` i `src/lib/util.ts`). Allt
-  hashas och paketeras i minnet — streamad hashing/ZIP är inte implementerad.
-  Gränsen gäller även **uppackade entries** i ett proof package: i normal drift
-  kontrolleras ZIP-entry-storlekar före uppackning när JSZip exponerar den
-  okomprimerade storleken. Om den metadatan saknas finns en guardad fallback
-  som fortfarande upprätthåller samma gränser efter uppackning. `.ots`-entryn
-  har dessutom en egen gräns på 10 MB (`MAX_OTS_BYTES`).
+- `detachedFromHashHex()` i `src/lib/ots.ts` är den viktiga digest-only-boundaryn
+  mot OpenTimestamps.
+- `hash-wasm` används för chunkad SHA-256 över `Blob`/`File`.
+- Worker-spåret bundlas via Vites `?worker&inline` från den typade
+  `src/workers/hash.worker.ts` — samma kod som unit-testas — och startas som
+  Blob-worker, vilket bevarar single-file-distributionen från `file://`.
+- Om worker-hashning faller används streamad main-thread-hashning som fallback,
+  inte helfilsläsning.
+- Ny input under pågående skapa/verifiera-operation avbryter operationen
+  (samma `AbortController` som cancel-knappen) så att ett gammalt resultat
+  aldrig kan skrivas mot en ny fil.
+- Avbrott (`AbortController`) är chunk-granulära: en pågående chunk avslutas
+  innan hashningen stannar helt.

@@ -1,10 +1,15 @@
 import JSZip from 'jszip';
 import { byId, createStatusList, makeVerdictBanner, wireDrop } from './lib/dom';
+import { createOperationUi } from './lib/operationUi';
+import { hashBlobStreaming } from './lib/hash';
+import { hashBlobInWorker } from './lib/hashWorkerClient';
+import { detectPackageCapability } from './lib/packageCapability';
 import {
   sha256Hex, bytesToHex, errorMessage, withTimeout,
   MAX_FILE_BYTES, MAX_OTS_BYTES, fileTooLargeMessage,
 } from './lib/util';
 import { getOts, opentimestampsProofName, detachedFromHashHex } from './lib/ots';
+import { isAbortError, throwIfSignalAborted } from './lib/hashShared';
 import { buildProofZip } from './lib/proofPackage';
 
 // README för det ompaketerade beviset som kan sparas efter en verifiering.
@@ -54,6 +59,8 @@ Bitcoin block via OpenTimestamps.
 export interface VerifyPanel {
   /** Nollställer hela verifiera-sidan (inputs och resultatkort). */
   resetPanel(): void;
+  /** Läser in package-capability på nytt och uppdaterar verify-copy/state. */
+  refreshPackageCapability(): void;
 }
 
 type VMode = 'vzip' | 'vseparate' | 'vtext';
@@ -86,24 +93,39 @@ async function readEntryGuarded(
 
 function classifyVerifyFile(file: File): VerifyFileKind {
   const name = file.name.toLowerCase();
+  if (name.endsWith('.ots')) {
+    return 'ots';
+  }
   const mime = file.type.toLowerCase();
   if (name.endsWith('.zip') || mime === 'application/zip' || mime === 'application/x-zip-compressed') {
     return 'zip';
   }
-  if (name.endsWith('.ots')) {
-    return 'ots';
-  }
   return 'other';
 }
 
+function shouldForceVerifyWorkerFailure(): boolean {
+  const debugState = (window as Window & {
+    __proofDebugState?: {
+      forceVerifyHashWorkerFailureCount?: number;
+    };
+  }).__proofDebugState;
+  if (!debugState || !debugState.forceVerifyHashWorkerFailureCount) {
+    return false;
+  }
+  debugState.forceVerifyHashWorkerFailureCount -= 1;
+  return true;
+}
+
 export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
-  let vMode: VMode = 'vzip';
+  let vMode: VMode = 'vseparate';
   let vZipFile: File | null = null;
   let vOrigFile: File | null = null;
   let vOtsFile: File | null = null;
   let vOtsTextFile: File | null = null;
   let verifyDone = false;
   let currentUpgradedUrl: string | null = null;
+  let currentVerifyAbort: AbortController | null = null;
+  let packageCapability = detectPackageCapability();
 
   const vtabs             = document.querySelectorAll<HTMLButtonElement>('.vtab');
   const vzipPanel         = byId('vzip-panel');
@@ -117,8 +139,13 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
   const resultCard        = byId('verify-result-card');
   const vrUpgradedLink    = byId('vr-upgraded-link', HTMLAnchorElement);
   const vrDownloadWarning = byId('vr-download-warning');
+  const vrPackageNote     = byId('vr-package-note');
+  const cancelBtn         = byId('verify-operation-cancel', HTMLButtonElement);
+  const verifyPackageModeNote = byId('verify-package-mode-note');
+  const verifyPackageCapabilityCopy = byId('verify-package-capability-copy');
 
   const vstatus = createStatusList(byId('vr-status-list'), 'vs-');
+  const operationUi = createOperationUi('verify');
 
   function showVerifyContent() { vrContent.classList.remove('hidden'); vrEmpty.classList.add('hidden'); }
   function hideVerifyContent() { vrContent.classList.add('hidden');    vrEmpty.classList.remove('hidden'); }
@@ -130,7 +157,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
 
   function updateVerifyBtn() {
     let ready = false;
-    if (vMode === 'vzip')      ready = vZipFile !== null;
+    if (vMode === 'vzip')      ready = packageCapability.supported && vZipFile !== null;
     if (vMode === 'vseparate') ready = vOrigFile !== null && vOtsFile !== null;
     if (vMode === 'vtext')     ready = vtextInput.value.trim() !== '' && vOtsTextFile !== null;
     verifyBtn.disabled = !ready || verifyDone;
@@ -143,10 +170,40 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     byId('vr-hash').textContent = '';
     vrUpgradedLink.classList.add('hidden');
     vrDownloadWarning.classList.add('hidden');
+    vrPackageNote.classList.add('hidden');
     if (currentUpgradedUrl) {
       URL.revokeObjectURL(currentUpgradedUrl);
       currentUpgradedUrl = null;
     }
+  }
+
+  function packageUnsupportedMessage(): string {
+    return 'Proof package verification is unavailable in this browser/app mode. Use the original file and its .ots proof instead.';
+  }
+
+  function refreshPackageCapability(): void {
+    packageCapability = detectPackageCapability();
+    verifyPackageModeNote.textContent = packageCapability.supported
+      ? 'Secondary option: verify a ZIP package that already includes the original file.'
+      : 'Proof package verification is unavailable in this browser/app mode. Use the original file and its .ots proof instead.';
+    verifyPackageCapabilityCopy.textContent = packageCapability.supported
+      ? 'Proof package verification is available in this browser/app mode for ZIP files up to 100 MB.'
+      : packageUnsupportedMessage();
+    if (!packageCapability.supported && vMode === 'vzip') {
+      vZipFile = null;
+      zipPrompt.classList.remove('hidden');
+      byId('zip-name').textContent = 'No ZIP selected';
+      byId('zip-input', HTMLInputElement).value = '';
+      byId('zip-drop').classList.remove('has-file');
+      clearVerifyResult();
+    }
+    updateVerifyBtn();
+  }
+
+  function otsTooLargeMessage(file: File): string {
+    const limitMb = Math.round(MAX_OTS_BYTES / 1048576);
+    return `"${file.name}" is ${Math.max(1, Math.round(file.size / 1048576))} MB. ` +
+      `.ots proof files over ${limitMb} MB are not supported because they do not look like valid OpenTimestamps proofs.`;
   }
 
   function clearVerifyOthers(exceptMode: VMode | null) {
@@ -180,6 +237,13 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     clearVerifyOthers(null);
     updateVerifyBtn();
     clearVerifyResult();
+    operationUi.reset();
+  }
+
+  function finishVerifyOperation(verdict: Verdict | null): void {
+    if (verdict === 'verified' || verdict === 'pending') {
+      operationUi.reset();
+    }
   }
 
   function selectVerifyMode(mode: VMode): void {
@@ -196,11 +260,14 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
   vtabs.forEach(tab => {
     tab.addEventListener('click', () => {
       const m = tab.dataset.vtab;
-      selectVerifyMode(m === 'vseparate' || m === 'vtext' ? m : 'vzip');
+      selectVerifyMode(m === 'vzip' || m === 'vtext' ? m : 'vseparate');
     });
   });
+  selectVerifyMode(vMode);
+  refreshPackageCapability();
 
   vtextInput.addEventListener('input', () => {
+    currentVerifyAbort?.abort();
     verifyDone = false;
     clearVerifyOthers('vtext');
     clearVerifyResult();
@@ -215,6 +282,9 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     const inputEl = byId(inputId, HTMLInputElement);
 
     function acceptFile(targetMode: VMode, targetNameId: string, targetInputId: string, targetSetter: (f: File) => void, f: File): void {
+      // Ny input avbryter en pågående operation så att den aldrig hinner
+      // skriva verdikt/nedladdning som ser ut att höra till den nya filen.
+      currentVerifyAbort?.abort();
       verifyDone = false;
       clearVerifyOthers(targetMode);
       clearVerifyResult();
@@ -229,15 +299,24 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
 
     wireDrop(byId(dropId), inputEl, f => {
       if (!f) return;
-      // Storleksgräns före arrayBuffer(): allt hashas och packas upp i minnet.
-      if (f.size > MAX_FILE_BYTES) {
-        alert(fileTooLargeMessage(f));
+      const kind = classifyVerifyFile(f);
+      if (kind === 'ots' && f.size > MAX_OTS_BYTES) {
+        alert(otsTooLargeMessage(f));
         inputEl.value = '';
         return;
       }
 
-      const kind = classifyVerifyFile(f);
-      if (kind === 'zip') {
+      if (mode === 'vzip' && kind === 'zip') {
+        if (!packageCapability.supported) {
+          alert(packageUnsupportedMessage());
+          inputEl.value = '';
+          return;
+        }
+        if (f.size > MAX_FILE_BYTES) {
+          alert(fileTooLargeMessage(f));
+          inputEl.value = '';
+          return;
+        }
         acceptFile('vzip', 'zip-name', 'zip-input', file => { vZipFile = file; }, f);
         return;
       }
@@ -264,16 +343,56 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
   makeVerifyDrop('vots-drop',      'vots-input',      'vots-name',      'vseparate', f => { vOtsFile = f; });
   makeVerifyDrop('vots-text-drop', 'vots-text-input', 'vots-text-name', 'vtext',     f => { vOtsTextFile = f; });
 
+  async function hashForVerify(
+    source: Blob,
+    signal: AbortSignal,
+    onProgress: (fraction: number) => void,
+  ): Promise<{ hashHex: string; method: 'worker' | 'streaming-fallback' }> {
+    const options = {
+      signal,
+      onProgress: (progress: { fraction: number }) => onProgress(progress.fraction),
+    };
+    try {
+      if (shouldForceVerifyWorkerFailure()) {
+        throw new Error('Forced worker failure for verify hashing test.');
+      }
+      const hashHex = await hashBlobInWorker(source, options);
+      return { hashHex, method: 'worker' };
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw error;
+      }
+      const hashHex = await hashBlobStreaming(source, options);
+      return { hashHex, method: 'streaming-fallback' };
+    }
+  }
+
+  function setVerifyHashMethod(method: 'worker' | 'streaming-fallback' | null): void {
+    const debugState = (window as Window & {
+      __proofDebugState?: { lastVerifyHashMethod: 'worker' | 'streaming-fallback' | null };
+    }).__proofDebugState;
+    if (debugState) {
+      debugState.lastVerifyHashMethod = method;
+    }
+  }
+
   // Returnerar utfallet — bara 'verified' låser Verify-knappen; övriga utfall
   // ska gå att köra om utan att användaren väljer om sina filer.
-  async function runVerify(fileBytes: Uint8Array<ArrayBuffer>, otsBytes: Uint8Array<ArrayBuffer>, origName: string, otsName: string): Promise<Verdict> {
+  async function runVerify(params: {
+    hashHex: string;
+    otsBytes: Uint8Array<ArrayBuffer>;
+    origName: string;
+    otsName: string;
+    packageOriginal?: Blob | Uint8Array<ArrayBuffer>;
+    packageSize?: number;
+    signal?: AbortSignal;
+  }): Promise<Verdict> {
     const OTS = getOts();
+    const { hashHex, otsBytes, origName, otsName, packageOriginal, packageSize, signal } = params;
 
     vstatus.clear();
     vrUpgradedLink.classList.add('hidden');
     showVerifyContent();
-
-    const hashHex = await sha256Hex(fileBytes);
     byId('vr-hash').textContent = hashHex;
 
     let otsDetached: OtsDetachedTimestampFile;
@@ -314,8 +433,10 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
         vstatus.set('upgrade', 'No new Bitcoin verification data was available to add', 'info');
       }
     } catch (e) {
+      if (isAbortError(e)) throw e;
       vstatus.set('upgrade', 'Could not reach OpenTimestamps: ' + errorMessage(e), 'warn');
     }
+    throwIfSignalAborted(signal);
 
     vstatus.set('verify', 'Verifying the proof against Bitcoin block headers…', 'info');
     let verdict: Verdict = 'error';
@@ -326,6 +447,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
       const fileDetached = detachedFromHashHex(hashHex);
       const result = await withTimeout(OTS.verify(otsDetached, fileDetached), 30000,
         'Verification timed out — a calendar server may be down. Try again later.');
+      throwIfSignalAborted(signal);
 
       let entries: Array<[string, OtsVerifyAttestation]> = [];
       if (result instanceof Map) {
@@ -366,6 +488,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
       }
 
     } catch (e) {
+      if (isAbortError(e)) throw e;
       verdict = 'failed';
       setResultState('failure');
       vstatus.remove('verify');
@@ -384,25 +507,32 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     // + README) kan verifieras direkt i ZIP-fliken. Visas alltid när beviset är
     // verifierat, och även annars om uppgraderingen hämtade ny data (den ska
     // inte gå förlorad bara för att verifieringssteget misslyckades).
-    if (verdict === 'verified' || upgradedBytes) {
+    throwIfSignalAborted(signal);
+    if ((verdict === 'verified' || upgradedBytes) && packageOriginal && packageSize !== undefined) {
+      if (!packageCapability.supported) {
+        vrPackageNote.textContent = packageUnsupportedMessage();
+        vrPackageNote.classList.remove('hidden');
+        return verdict;
+      }
       const otsFileName = opentimestampsProofName(otsName);
       const folderName = otsFileName.replace(/\.ots$/i, '');
       const blob = await buildProofZip({
         folderName,
         originalName: origName,
-        original: fileBytes,
+        original: packageOriginal,
         hashHex,
         otsFileName,
         otsBytes: otsDetached.serializeToBytes(),
         readme: verifiedReadme({
           originalName: origName,
-          size: fileBytes.byteLength,
+          size: packageSize,
           hashHex,
           otsFileName,
           verified: verdict === 'verified',
           anchorDetails,
         }),
       });
+      throwIfSignalAborted(signal);
       if (currentUpgradedUrl) URL.revokeObjectURL(currentUpgradedUrl);
       currentUpgradedUrl = URL.createObjectURL(blob);
       vrUpgradedLink.href = currentUpgradedUrl;
@@ -425,6 +555,10 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     }, 400);
   });
 
+  cancelBtn.addEventListener('click', () => {
+    currentVerifyAbort?.abort();
+  });
+
   verifyBtn.addEventListener('click', async () => {
     try {
       getOts();
@@ -434,12 +568,22 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     }
     verifyBtn.disabled = true;
     verifyBtn.textContent = 'Verifying…';
+    // En controller för HELA operationen (läsning → hash → verifiering →
+    // paket): ny input eller cancel avbryter vid nästa checkpoint.
+    currentVerifyAbort = new AbortController();
+    const opSignal = currentVerifyAbort.signal;
+    setVerifyHashMethod(null);
     let verdict: Verdict | null = null;
 
     try {
       if (vMode === 'vzip') {
+        if (!packageCapability.supported) {
+          alert(packageUnsupportedMessage());
+          return;
+        }
         if (!vZipFile) { alert('Please select a ZIP file.'); return; }
         const zip = await JSZip.loadAsync(await vZipFile.arrayBuffer());
+        throwIfSignalAborted(opSignal);
 
         const otsEntries: Array<{ name: string; entry: JSZip.JSZipObject }> = [];
         const origEntries: Array<{ name: string; entry: JSZip.JSZipObject }> = [];
@@ -490,14 +634,58 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
 
         const otsBytes  = await readEntryGuarded(ots.entry, MAX_OTS_BYTES, otsTooBig);
         const fileBytes = await readEntryGuarded(origEntries[0]!.entry, MAX_FILE_BYTES, origTooBig);
-        verdict = await runVerify(fileBytes, otsBytes, origEntries[0]!.name, ots.name);
+        throwIfSignalAborted(opSignal);
+        const zipHashHex = await sha256Hex(fileBytes);
+        throwIfSignalAborted(opSignal);
+        verdict = await runVerify({
+          hashHex: zipHashHex,
+          otsBytes,
+          origName: origEntries[0]!.name,
+          otsName: ots.name,
+          packageOriginal: fileBytes,
+          packageSize: fileBytes.byteLength,
+          signal: opSignal,
+        });
 
       } else if (vMode === 'vseparate') {
         if (!vOrigFile) { alert('Please select the original file.'); return; }
         if (!vOtsFile)  { alert('Please select the .ots proof file.'); return; }
-        const fileBytes = new Uint8Array(await vOrigFile.arrayBuffer());
+        clearVerifyResult();
+        operationUi.set({
+          state: 'hashing',
+          message: 'Hashing file locally… 0%',
+          progress: 0,
+          cancelVisible: true,
+          cancelEnabled: true,
+        });
+        const hashResult = await hashForVerify(vOrigFile, opSignal, fraction => {
+          operationUi.set({
+            state: 'hashing',
+            message: `Hashing file locally… ${Math.round(fraction * 100)}%`,
+            progress: fraction,
+            cancelVisible: true,
+            cancelEnabled: true,
+          });
+        });
+        setVerifyHashMethod(hashResult.method);
+        operationUi.set({
+          state: 'verifying',
+          message: 'Verifying OpenTimestamps proof…',
+          progress: null,
+          cancelVisible: false,
+          cancelEnabled: false,
+        });
         const otsBytes  = new Uint8Array(await vOtsFile.arrayBuffer());
-        verdict = await runVerify(fileBytes, otsBytes, vOrigFile.name, vOtsFile.name);
+        throwIfSignalAborted(opSignal);
+        verdict = await runVerify({
+          hashHex: hashResult.hashHex,
+          otsBytes,
+          origName: vOrigFile.name,
+          otsName: vOtsFile.name,
+          packageOriginal: vOrigFile,
+          packageSize: vOrigFile.size,
+          signal: opSignal,
+        });
 
       } else {
         const text = vtextInput.value.trim();
@@ -505,22 +693,51 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
         if (!vOtsTextFile) { alert('Please select the .ots proof file.'); return; }
         const fileBytes = new TextEncoder().encode(text);
         const otsBytes  = new Uint8Array(await vOtsTextFile.arrayBuffer());
-        verdict = await runVerify(fileBytes, otsBytes, 'text.txt', vOtsTextFile.name);
+        verdict = await runVerify({
+          hashHex: await sha256Hex(fileBytes),
+          otsBytes,
+          origName: 'text.txt',
+          otsName: vOtsTextFile.name,
+          packageOriginal: fileBytes,
+          packageSize: fileBytes.byteLength,
+          signal: opSignal,
+        });
       }
     } catch (e) {
-      // T.ex. korrupt ZIP eller oläsbar fil — visa felet i stället för att fela tyst.
-      verdict = 'failed';
-      showVerifyContent();
-      setResultState('failure');
-      vstatus.set('load-error', 'Could not read the input: ' + errorMessage(e), 'err');
+      if (e instanceof Error && e.name === 'AbortError') {
+        verdict = 'error';
+        clearVerifyResult();
+        operationUi.set({
+          state: 'cancelled',
+          message: 'Operation cancelled.',
+          progress: null,
+          cancelVisible: false,
+          cancelEnabled: false,
+        });
+      } else {
+        // T.ex. korrupt ZIP eller oläsbar fil — visa felet i stället för att fela tyst.
+        verdict = 'failed';
+        showVerifyContent();
+        setResultState('failure');
+        vstatus.set('load-error', 'Could not read the input: ' + errorMessage(e), 'err');
+        operationUi.set({
+          state: 'error',
+          message: 'Error: ' + errorMessage(e),
+          progress: null,
+          cancelVisible: false,
+          cancelEnabled: false,
+        });
+      }
     } finally {
       // Lås knappen bara när beviset är färdigverifierat; vid pending/fel ska
       // användaren kunna försöka igen utan att välja om sina filer.
+      currentVerifyAbort = null;
+      finishVerifyOperation(verdict);
       verifyDone = verdict === 'verified';
       updateVerifyBtn();
       verifyBtn.textContent = 'Verify proof';
     }
   });
 
-  return { resetPanel };
+  return { resetPanel, refreshPackageCapability };
 }
