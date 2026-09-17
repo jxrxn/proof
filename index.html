@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Proof — Bitcoin Timestamp</title>
+<title>Proof – Bitcoin Timestamp</title>
 <script type="module" src="/src/main.ts"></script>
 </head>
 <body>
@@ -29,7 +29,7 @@
         <button class="tab" data-tab="text">Text</button>
       </div>
       <div class="helper-text">
-        Create a proof from a file or a short piece of text. Only a SHA-256 digest is submitted — your file or text never leaves your device.
+        Create a proof from a file or a short piece of text. Only a SHA-256 digest is submitted – your file or text never leaves your device.
         Large files are supported when saving a proof file (.ots).
         Proof packages include the original file and are currently limited to 100&nbsp;MB.
       </div>
@@ -144,9 +144,9 @@
       <details>
         <summary>What is this proof, and what happens next?</summary>
         <p><strong>1. Hash created locally.</strong> A SHA-256 fingerprint of your file or text was computed on your device. The original was never uploaded.</p>
-        <p><strong>2. Hash submitted to OpenTimestamps.</strong> Only the hash was sent. In return you received an <code>.ots</code> file — your <em>initial proof</em>. It does not yet contain Bitcoin verification data.</p>
-        <p><strong>3. Bitcoin anchoring (usually 1–6 hours).</strong> OpenTimestamps commits your hash to the Bitcoin blockchain — it is written into a Bitcoin transaction.</p>
-        <p><strong>4. OpenTimestamps proof.</strong> Once anchored, your initial proof becomes a full <em>OpenTimestamps proof</em> — now containing Bitcoin verification data — that anyone can verify against the Bitcoin blockchain, without trusting you, me, or OpenTimestamps.</p>
+        <p><strong>2. Hash submitted to OpenTimestamps.</strong> Only the hash was sent. In return you received an <code>.ots</code> file – your <em>initial proof</em>. It does not yet contain Bitcoin verification data.</p>
+        <p><strong>3. Bitcoin anchoring (usually 1–6 hours).</strong> OpenTimestamps commits your hash to the Bitcoin blockchain – it is written into a Bitcoin transaction.</p>
+        <p><strong>4. OpenTimestamps proof.</strong> Once anchored, your initial proof becomes a full <em>OpenTimestamps proof</em> – now containing Bitcoin verification data – that anyone can verify against the Bitcoin blockchain, without trusting you, me, or OpenTimestamps.</p>
         <p>The proof file (.ots) contains only the hash and can be shared freely. The proof package (.zip) also contains a copy of your original file.</p>
         <p>To check the proof, use the Verify panel, run <code>ots verify -f ORIGINAL_FILE PROOF.ots</code>, or visit <a href="https://opentimestamps.org" target="_blank" rel="noopener noreferrer">opentimestamps.org</a>.</p>
       </details>
@@ -176,7 +176,7 @@
     <div class="footer-panel">
       <p>Timestamp any text or file. This app creates a SHA-256 hash on your device and submits only that hash to OpenTimestamps. OpenTimestamps then anchors it to the Bitcoin blockchain, usually within 1–6 hours.</p>
       <p>Your original file or text is not uploaded. Only the cryptographic hash is submitted for timestamping, and a hash cannot be reversed to reveal the original contents.</p>
-      <p>Right after creation you hold an initial proof, which does not yet contain Bitcoin verification data. Once Bitcoin anchoring completes it becomes a full OpenTimestamps proof that can be independently verified — demonstrating that the file or text existed at that point in time, while preserving privacy. Save your proof so you can do this later.</p>
+      <p>Right after creation you hold an initial proof, which does not yet contain Bitcoin verification data. Once Bitcoin anchoring completes it becomes a full OpenTimestamps proof that can be independently verified – demonstrating that the file or text existed at that point in time, while preserving privacy. Save your proof so you can do this later.</p>
       <p>Using this app is free. OpenTimestamps calendar servers are free to use and rely on donations. Learn more at <a href="https://opentimestamps.org/" target="_blank" rel="noopener noreferrer">opentimestamps.org</a>.</p>
     </div>
   </details>

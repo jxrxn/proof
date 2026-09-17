@@ -1,4 +1,4 @@
-Proof — Bitcoin Timestamp
+Proof – Bitcoin Timestamp
 =========================
 
 Copyright (C) 2026 jxrxn
@@ -25,7 +25,7 @@ Source code: https://github.com/jxrxn/proof
 If you redistribute this build
 ------------------------------
 
-The files in this directory — LICENSE.txt, this notice, and licenses/ —
+The files in this directory – LICENSE.txt, this notice, and licenses/ –
 accompany index.html and carry the notices its components require.
 
 If you pass index.html on, especially separated from these files, you are a
@@ -72,7 +72,7 @@ Proof claims no ownership of OpenTimestamps, Bitcoin, or any other
 third-party code, specification or trademark.
 
 
-OpenTimestamps (opentimestamps) 0.4.9 — LGPL-3.0-or-later
+OpenTimestamps (opentimestamps) 0.4.9 – LGPL-3.0-or-later
 
   The OpenTimestamps library is used by this program, and the library and its
   use are covered by the GNU Lesser General Public License, version 3.
@@ -91,7 +91,7 @@ OpenTimestamps (opentimestamps) 0.4.9 — LGPL-3.0-or-later
   That build itself embeds bitcore-lib and elliptic; see their notices below.
 
 
-Inter — SIL Open Font License 1.1
+Inter – SIL Open Font License 1.1
 
   Copyright 2016 The Inter Project Authors
   https://github.com/rsms/inter
@@ -99,7 +99,7 @@ Inter — SIL Open Font License 1.1
   License text:  licenses/OFL-1.1-Inter.txt
 
 
-JetBrains Mono — SIL Open Font License 1.1
+JetBrains Mono – SIL Open Font License 1.1
 
   Copyright 2020 The JetBrains Mono Project Authors
   https://github.com/JetBrains/JetBrainsMono
@@ -107,26 +107,26 @@ JetBrains Mono — SIL Open Font License 1.1
   License text:  licenses/OFL-1.1-JetBrainsMono.txt
 
 
-hash-wasm — MIT
+hash-wasm – MIT
 
   Copyright (c) 2020 Dani Biro
   License text:  licenses/MIT-hash-wasm.txt
 
 
-JSZip — MIT (dual licensed MIT or GPLv3; used here under MIT)
+JSZip – MIT (dual licensed MIT or GPLv3; used here under MIT)
 
   Copyright (c) 2009-2016 Stuart Knightley, David Duponchel,
   Franz Buchinger, Antonio Afonso
   License text:  licenses/MIT-jszip.txt
 
 
-bitcore-lib — MIT (embedded inside the OpenTimestamps build)
+bitcore-lib – MIT (embedded inside the OpenTimestamps build)
 
   Copyright (c) 2013-2019 BitPay, Inc. and others
   License text:  licenses/MIT-bitcore-lib.txt
 
 
-elliptic — MIT (embedded inside the OpenTimestamps build)
+elliptic – MIT (embedded inside the OpenTimestamps build)
 
   Copyright Fedor Indutny, 2014
   License text:  licenses/MIT-elliptic.txt

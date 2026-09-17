@@ -32,7 +32,7 @@
    enda självbärande fil utan CDN-anrop. Inter är variabel och täcker alla
    vikter vi använder (400/600/700) i en fil per subset.
 
-   unicode-range är inte en optimering här — den är nödvändig. Flera @font-face
+   unicode-range är inte en optimering här – den är nödvändig. Flera @font-face
    för samma familj utan intervall gör att bara den sist deklarerade används.
    Intervallen är kopierade ur @fontsource-variable/inter och matchar exakt
    tecknen i respektive fil.
@@ -42,7 +42,7 @@
    samma ord: latin-ext behövs för polska "Zażółć", greek-ext för polytonisk
    grekiska, cyrillic-ext för kyrilliska minoritetsspråk. Skript som Inter
    helt saknar (CJK, arabiska, hebreiska, thai, devanagari) faller tillbaka
-   enhetligt på systemfonten — annorlunda utseende, men aldrig blandat. */
+   enhetligt på systemfonten – annorlunda utseende, men aldrig blandat. */
 @font-face {
   font-family: 'Inter';
   font-style: normal;
@@ -542,7 +542,7 @@ button.primary.verify-btn:disabled { background: #2c2c30; border-color: var(--or
 }
 .package-contents li { margin: 2px 0; }
 
-/* ── Status — no background, just color ── */
+/* ── Status – no background, just color ── */
 .status {
   padding: 3px 0;
   margin: 4px 0;
@@ -555,7 +555,7 @@ button.primary.verify-btn:disabled { background: #2c2c30; border-color: var(--or
 .status.warn { color: var(--orange); }
 .status.err  { color: var(--red); }
 
-/* ── Verdict — plain text, left-aligned ── */
+/* ── Verdict – plain text, left-aligned ── */
 .verdict-banner { margin: 8px 0; }
 .verdict-banner .big   { font-size: 1rem; font-weight: 700; margin-right: 5px; }
 .verdict-banner .label { font-size: 0.85rem; font-weight: 700; }

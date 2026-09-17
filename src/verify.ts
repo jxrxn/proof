@@ -23,9 +23,9 @@ function verifiedReadme(opts: {
   anchorDetails: string[];
 }): string {
   const status = opts.verified
-    ? `Full OpenTimestamps proof — VERIFIED, anchored in the Bitcoin blockchain.` +
+    ? `Full OpenTimestamps proof – VERIFIED, anchored in the Bitcoin blockchain.` +
       (opts.anchorDetails.length ? '\nAnchoring:  ' + opts.anchorDetails.join('\n            ') : '')
-    : `Updated initial proof — contains newly fetched calendar data, but was
+    : `Updated initial proof – contains newly fetched calendar data, but was
             not yet confirmed as anchored in Bitcoin when this package was
             saved. Verify again later.`;
   return `SHA-256 hash + OpenTimestamps
@@ -77,7 +77,7 @@ function entryUncompressedSize(entry: JSZip.JSZipObject): number | null {
 }
 
 // Läser en ZIP-entry med storleksgräns: okomprimerad storlek kontrolleras
-// FÖRE uppackning (zip-bombskydd — en liten men hårt komprimerad ZIP får inte
+// FÖRE uppackning (zip-bombskydd – en liten men hårt komprimerad ZIP får inte
 // expandera till något som kraschar fliken), och som bälte-och-hängslen även
 // efter uppackning ifall det interna storleksfältet inte gick att läsa.
 async function readEntryGuarded(
@@ -372,7 +372,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     }
   }
 
-  // Returnerar utfallet — bara 'verified' låser Verify-knappen; övriga utfall
+  // Returnerar utfallet – bara 'verified' låser Verify-knappen; övriga utfall
   // ska gå att köra om utan att användaren väljer om sina filer.
   async function runVerify(params: {
     hashHex: string;
@@ -423,15 +423,15 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
       const changed = await withTimeout(
         OTS.upgrade(upgradeDetached),
         30000,
-        'timed out — a calendar server may be down. Try again later.',
+        'timed out – a calendar server may be down. Try again later.',
         signal,
       );
       if (changed) {
         upgradedBytes = upgradeDetached.serializeToBytes();
-        vstatus.set('upgrade', 'Bitcoin verification data added — you now have a full OpenTimestamps proof', 'ok');
+        vstatus.set('upgrade', 'Bitcoin verification data added – you now have a full OpenTimestamps proof', 'ok');
       } else {
         // Gäller både ett redan komplett bevis och ett färskt som ännu inte
-        // ankrats — säg inte "already a full proof" när det kan vara pending.
+        // ankrats – säg inte "already a full proof" när det kan vara pending.
         vstatus.set('upgrade', 'No new Bitcoin verification data was available to add', 'info');
       }
     } catch (e) {
@@ -445,13 +445,13 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     let anchorDetails: string[] = [];
 
     try {
-      // detachedFromHashHex tar bara digesten — filinnehållet lämnar aldrig appen.
+      // detachedFromHashHex tar bara digesten – filinnehållet lämnar aldrig appen.
       const fileDetached = detachedFromHashHex(hashHex);
       const proofDetached = OTS.DetachedTimestampFile.deserialize(upgradedBytes ?? originalOtsBytes);
       const result = await withTimeout(
         OTS.verify(proofDetached, fileDetached),
         30000,
-        'Verification timed out — a calendar server may be down. Try again later.',
+        'Verification timed out – a calendar server may be down. Try again later.',
         signal,
       );
       throwIfSignalAborted(signal);
@@ -479,18 +479,18 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
             dateStr = new Date(value.timestamp * 1000).toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
           }
           if (blockHeight) {
-            details.push('Bitcoin block #' + blockHeight.toLocaleString('en') + (dateStr ? ' — ' + dateStr : ''));
+            details.push('Bitcoin block #' + blockHeight.toLocaleString('en') + (dateStr ? ' – ' + dateStr : ''));
           } else if (dateStr) {
             details.push(dateStr);
           }
         }
-        vstatus.el.appendChild(makeVerdictBanner('verified', '✓', 'VERIFIED — Anchored in Bitcoin', details));
+        vstatus.el.appendChild(makeVerdictBanner('verified', '✓', 'VERIFIED – Anchored in Bitcoin', details));
       } else {
         verdict = 'pending';
         setResultState('pending');
-        vstatus.el.appendChild(makeVerdictBanner('pending', '–', 'Initial proof — not yet anchored in Bitcoin', [
+        vstatus.el.appendChild(makeVerdictBanner('pending', '–', 'Initial proof – not yet anchored in Bitcoin', [
           'This is normal for a new proof, not an error. The hash and the .ots file match; OpenTimestamps has your hash, but it has not been written into a Bitcoin block yet.',
-          'Bitcoin anchoring usually completes within 1–6 hours — come back later and verify again.',
+          'Bitcoin anchoring usually completes within 1–6 hours – come back later and verify again.',
         ]));
       }
 
@@ -509,7 +509,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
       }
     }
 
-    // Erbjud ett komplett ompaketerat ZIP i stället för en lös .ots-fil — en
+    // Erbjud ett komplett ompaketerat ZIP i stället för en lös .ots-fil – en
     // ensam .ots är obegriplig för mottagaren, medan paketet (original + bevis
     // + README) kan verifieras direkt i ZIP-fliken. Visas alltid när beviset är
     // verifierat, och även annars om uppgraderingen hämtade ny data (den ska
@@ -722,7 +722,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
           cancelEnabled: false,
         });
       } else {
-        // T.ex. korrupt ZIP eller oläsbar fil — visa felet i stället för att fela tyst.
+        // T.ex. korrupt ZIP eller oläsbar fil – visa felet i stället för att fela tyst.
         verdict = 'failed';
         showVerifyContent();
         setResultState('failure');

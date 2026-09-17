@@ -18,7 +18,7 @@ export function hexToBytes(hex: string): Uint8Array<ArrayBuffer> {
 }
 
 // Allt hashas och paketeras i minnet (File.arrayBuffer + JSZip), utan streamad
-// hashing — mycket stora filer kan därför krascha fliken. Gränsen är medvetet
+// hashing – mycket stora filer kan därför krascha fliken. Gränsen är medvetet
 // konservativ och gäller både skapa- och verifiera-flödet, inklusive
 // uppackade entries inuti ett proof package (skydd mot zip-bomber).
 export const MAX_FILE_BYTES = 100 * 1024 * 1024;

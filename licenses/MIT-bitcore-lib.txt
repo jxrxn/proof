@@ -1,4 +1,4 @@
-bitcore-lib 8.24.2 — MIT License
+bitcore-lib 8.24.2 – MIT License
 
 Provenance: extracted from bitcore-lib-8.24.2.tgz, obtained from the URL
 recorded in the vendored OpenTimestamps build's own embedded package metadata

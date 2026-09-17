@@ -5,7 +5,7 @@ import {
 } from './hashShared';
 import type { HashWorkerRequest, HashWorkerResponse } from './hashWorkerProtocol';
 // ?worker&inline: Vite bundlar den typade workern (hash.worker.ts och hela
-// dess modulgraf) och bäddar in den som base64 i huvudbundeln — produktionen
+// dess modulgraf) och bäddar in den som base64 i huvudbundeln – produktionen
 // kör därmed exakt samma kod som unit-testerna (attachHashWorker), singlefile-
 // bygget förblir en enda dist/index.html, och file:// fungerar eftersom
 // workern startas från en Blob-URL i stället för att hämtas över nätet.

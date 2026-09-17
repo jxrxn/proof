@@ -1,7 +1,7 @@
 import JSZip from 'jszip';
 
 // Gemensam paketering för både skapa- och verifiera-sidan: ett ZIP-paket med
-// originalfil, .ots-bevis, .sha256-fil och README är appens utbytesformat —
+// originalfil, .ots-bevis, .sha256-fil och README är appens utbytesformat –
 // det är vad ZIP-fliken i verify-panelen förstår.
 export interface ProofPackage {
   folderName: string;

@@ -22,7 +22,7 @@ legal advice.
 
 ---
 
-## OpenTimestamps (`opentimestamps`) — LGPL-3.0-or-later
+## OpenTimestamps (`opentimestamps`) – LGPL-3.0-or-later
 
 **The OpenTimestamps library is used by Proof, and the library and its use
 are covered by the GNU Lesser General Public License, version 3.**
@@ -64,9 +64,9 @@ that a Combined Work be accompanied by a copy of both documents. Both are
 included in this repository:
 
 - [`licenses/opentimestamps-LGPL-3.0.txt`](licenses/opentimestamps-LGPL-3.0.txt)
-  — a verbatim copy of the upstream `LICENSE` file at tag `v0.4.9`, which
+  – a verbatim copy of the upstream `LICENSE` file at tag `v0.4.9`, which
   contains the project's own notice followed by the LGPL-3.0 text
-- [`licenses/GPL-3.0.txt`](licenses/GPL-3.0.txt) — the GNU General Public
+- [`licenses/GPL-3.0.txt`](licenses/GPL-3.0.txt) – the GNU General Public
   License version 3, as incorporated by the LGPL
 
 `licenses/GPL-3.0.txt` and the repository's own [`LICENSE`](LICENSE) are
@@ -112,7 +112,7 @@ package metadata and license fields travel inside the bundled file.
 
 ---
 
-## Inter — SIL Open Font License 1.1
+## Inter – SIL Open Font License 1.1
 
 | | |
 |---|---|
@@ -126,7 +126,7 @@ Vendored as the `woff2` subset files in `src/fonts/`, inlined into
 
 ---
 
-## JetBrains Mono — SIL Open Font License 1.1
+## JetBrains Mono – SIL Open Font License 1.1
 
 | | |
 |---|---|
@@ -154,7 +154,7 @@ emitted into the build.
 | `elliptic` | (c) Fedor Indutny, 2014 | [`licenses/MIT-elliptic.txt`](licenses/MIT-elliptic.txt) |
 
 `jszip` is dual licensed MIT or GPLv3; Proof uses it under MIT. `bitcore-lib`
-and `elliptic` are not direct dependencies — they are embedded inside the
+and `elliptic` are not direct dependencies – they are embedded inside the
 vendored OpenTimestamps build.
 
 Build-time-only tooling (Vite, TypeScript, Vitest, puppeteer-core) is not
@@ -170,20 +170,20 @@ components require. Alongside `index.html` it contains:
 
 | File | Why it is there |
 |---|---|
-| `LICENSE.txt` | GPL-3.0 §4 — recipients get a copy of Proof's license. Also the "copy of the GNU GPL" that LGPL-3.0 §4(b) requires. |
+| `LICENSE.txt` | GPL-3.0 §4 – recipients get a copy of Proof's license. Also the "copy of the GNU GPL" that LGPL-3.0 §4(b) requires. |
 | `NOTICE.txt` | LGPL-3.0 §4(a) prominent notice, Proof's copyright, the brand-asset reservation, and the index of component licenses. |
-| `licenses/LGPL-3.0-opentimestamps.txt` | LGPL-3.0 §4(b) — "this license document". |
-| `licenses/OFL-1.1-Inter.txt` | OFL-1.1 §2 — each copy of the font must carry its copyright notice and license. |
+| `licenses/LGPL-3.0-opentimestamps.txt` | LGPL-3.0 §4(b) – "this license document". |
+| `licenses/OFL-1.1-Inter.txt` | OFL-1.1 §2 – each copy of the font must carry its copyright notice and license. |
 | `licenses/OFL-1.1-JetBrainsMono.txt` | Same, for JetBrains Mono. |
-| `licenses/MIT-*.txt` (4 files) | MIT — notice included in all copies. |
+| `licenses/MIT-*.txt` (4 files) | MIT – notice included in all copies. |
 
 `index.html` additionally carries a short comment header naming the program,
 its copyright, its license and the LGPL notice, so that the file identifies
 itself and points to its source even when seen on its own.
 
 That header is not a substitute for the accompanying files, and it does not
-discharge anyone else's obligations. Whoever redistributes `index.html` —
-especially detached from the rest of `dist/` — is a distributor in their own
+discharge anyone else's obligations. Whoever redistributes `index.html` –
+especially detached from the rest of `dist/` – is a distributor in their own
 right and must satisfy the GPL, LGPL, OFL and MIT terms themselves, including
 supplying the license texts and Corresponding Source. The repository URL in
 the header does not by itself make a forwarded copy compliant.

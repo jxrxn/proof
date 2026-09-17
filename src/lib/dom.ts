@@ -67,7 +67,7 @@ export function makeVerdictBanner(
 }
 
 // Gemensam drag & drop-koppling för en drop-yta + tillhörande file-input.
-// change-händelsen kan ge null (avbruten filväljare) — drop ger alltid en fil.
+// change-händelsen kan ge null (avbruten filväljare) – drop ger alltid en fil.
 export function wireDrop(
   dropEl: HTMLElement,
   inputEl: HTMLInputElement,

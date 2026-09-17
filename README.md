@@ -1,4 +1,4 @@
-# Proof — Bitcoin Timestamp
+# Proof – Bitcoin Timestamp
 
 Tidsstämpla text eller filer via [OpenTimestamps](https://opentimestamps.org/).
 Appen skapar SHA-256 lokalt i webbläsaren och skickar bara digesten till
@@ -29,11 +29,11 @@ npm run e2e        # bygger testvariant + kör end-to-end-röktest i Chrome (kr�
 
 Själva appen är **en enda självbärande HTML-fil** (`dist/index.html`) med all
 JS, CSS och alla typsnitt inbakade. Ingen separat worker-fil, `.wasm`-fil
-eller CDN-resurs krävs, vilket gör filen mycket portabel — den kan flyttas,
+eller CDN-resurs krävs, vilket gör filen mycket portabel – den kan flyttas,
 kopieras och öppnas som en ensam fil.
 
 Bredvid den emitteras ikoner, `manifest.webmanifest` och OG-bilden som egna
-filer. De behövs bara vid webbhosting — ett PWA-manifest måste vara en egen
+filer. De behövs bara vid webbhosting – ett PWA-manifest måste vara en egen
 fil för att vara installerbart, Safari hämtar apple-touch-icon som URL, och
 OG-bilder läses av externa skrapare som kräver absolut URL. Kopierar man bara
 `index.html` följer de inte med, och ikonlänkarna 404:ar oskadligt.
@@ -46,12 +46,12 @@ Skilj på två saker:
   inget webbhotell. Det fungerar när filen öppnas direkt.
 - **Nätverksberoende: stampning mot kalendrar, `upgrade` och verifiering**
   kräver cross-origin-anrop från ett `file://`-ursprung, där webbläsare
-  behandlar origin som `null`. Det är verifierat i **Chrome** — `test/e2e.mjs`
+  behandlar origin som `null`. Det är verifierat i **Chrome** – `test/e2e.mjs`
   körs från `file://` utan uppmjukade säkerhetsflaggor och hävdar att verkliga
   kalender-POST:ar observerades. Det är **inte** verifierat i Firefox eller
   Safari, som är strängare mot `file://`-ursprung.
 
-Hostad över HTTPS gäller inte den reservationen — då är ursprunget normalt.
+Hostad över HTTPS gäller inte den reservationen – då är ursprunget normalt.
 Det är den distributionsform appen är avsedd för.
 
 ## Användning
@@ -144,20 +144,20 @@ Det här är ett sekundärt verify-flöde.
 
 ## Struktur
 
-- `index.html` — markup (Vite-entry)
-- `src/main.ts` — kopplar ihop panelerna
-- `src/stamp.ts` — skapa bevis
-- `src/verify.ts` — verifiera bevis
-- `src/lib/hash.ts` — streamad/chunkad SHA-256 i main thread
-- `src/lib/hashWorkerClient.ts` — worker-klient för hashning
-- `src/lib/packageCapability.ts` — capability/policy för proof package
-- `src/lib/ots.ts` — digest-only-gräns mot OpenTimestamps
-- `src/vendor/opentimestamps.min.js` — vendrad OpenTimestamps-bundle v0.4.9
-- `OTS-BUNDLE.md` — analys av den vendrade bundlens storlek och beroenden
-- `src/fonts/` — vendrade latin-subsets av Inter och JetBrains Mono (woff2)
-- `src/icons/` — favicon, PWA-ikoner, OG-bild och deras metadata (`icons.ts`)
-- `test/fixtures/` — officiellt hello-world-exempel för VERIFIED-flödet
-- `legacy/proof.html` — gammal arkiverad version; använd inte den som app
+- `index.html` – markup (Vite-entry)
+- `src/main.ts` – kopplar ihop panelerna
+- `src/stamp.ts` – skapa bevis
+- `src/verify.ts` – verifiera bevis
+- `src/lib/hash.ts` – streamad/chunkad SHA-256 i main thread
+- `src/lib/hashWorkerClient.ts` – worker-klient för hashning
+- `src/lib/packageCapability.ts` – capability/policy för proof package
+- `src/lib/ots.ts` – digest-only-gräns mot OpenTimestamps
+- `src/vendor/opentimestamps.min.js` – vendrad OpenTimestamps-bundle v0.4.9
+- `OTS-BUNDLE.md` – analys av den vendrade bundlens storlek och beroenden
+- `src/fonts/` – vendrade latin-subsets av Inter och JetBrains Mono (woff2)
+- `src/icons/` – favicon, PWA-ikoner, OG-bild och deras metadata (`icons.ts`)
+- `test/fixtures/` – officiellt hello-world-exempel för VERIFIED-flödet
+- `legacy/proof.html` – gammal arkiverad version; använd inte den som app
 
 ## Tekniska noteringar
 
@@ -165,46 +165,46 @@ Det här är ett sekundärt verify-flöde.
   mot OpenTimestamps.
 - Den vendrade OTS-bundlen är 1,5 MB, varav merparten är `bitcore-lib` med
   beroenden. Det finns där för OTS lokala Bitcoin-node-väg (`bitcoin.js`,
-  RPC mot `bitcoin.conf`), som är oåtkomlig i en webbläsare — vi går alltid
+  RPC mot `bitcoin.conf`), som är oåtkomlig i en webbläsare – vi går alltid
   via `esplora.js` mot blockstream.info. Se `OTS-BUNDLE.md` för mätningar och
   vad som skulle krävas för att krympa den.
 - `hash-wasm` används för chunkad SHA-256 över `Blob`/`File`.
 - Typsnitten är vendrade som woff2 i stället för att hämtas från Google Fonts.
   Ett CDN-anrop hade brutit både `file://`-körning och löftet att appen inte
   pratar med någon utomstående. `build.assetsInlineLimit` är höjd så att Vite
-  bakar in dem som data-URI:er — annars hade de emitterats som separata assets
+  bakar in dem som data-URI:er – annars hade de emitterats som separata assets
   och bygget vore inte längre en enda fil. Uppdateras från
   `@fontsource-variable/inter` och `@fontsource/jetbrains-mono`, båda v5.3.0, OFL.
 - Av Inter ingår samtliga sju subsets: latin, latin-ext, vietnamesiska,
   grekiska, grekiska-ext, kyrilliska och kyrilliska-ext (241 kB totalt).
-  `-ext`-varianterna är inte valfria — utan dem täcks språken bara delvis och
+  `-ext`-varianterna är inte valfria – utan dem täcks språken bara delvis och
   texten blandar Inter med systemfonten inuti samma ord (polska `Zażółć`,
   polytonisk grekiska, kyrilliska minoritetsspråk).
-- Skript som Inter helt saknar — CJK, arabiska, hebreiska, thai, devanagari —
+- Skript som Inter helt saknar – CJK, arabiska, hebreiska, thai, devanagari –
   faller alltid tillbaka på systemfonten oavsett subsets. Det sker för hela
   stycken, så resultatet ser annorlunda ut men aldrig blandat.
 - Enstaka arkaiska fornkyrkoslaviska tecken (`Ꙋ` U+A64A, `ꙗ` U+A657, `ѿ`
   U+047F) ligger i `cyrillic-ext`-intervallet men saknas i Inters faktiska
-  filer och faller därför tillbaka. Modern kyrilliska — ryska, ukrainska,
-  serbiska, bulgariska — är helt täckt.
+  filer och faller därför tillbaka. Modern kyrilliska – ryska, ukrainska,
+  serbiska, bulgariska – är helt täckt.
 - `unicode-range` i `@font-face` är nödvändig, inte en optimering: flera
   `@font-face` för samma familj utan intervall gör att bara den sist
   deklarerade används.
 - Ikoner, manifest och OG-bild content-hashas av `emitIcons()` i
   `vite.config.ts` (`favicon.<hash>.svg`) och fungerar därmed som
   cache-buster. Webbläsare cachar favicons aggressivt och sociala skrapare
-  cachar OG-bilder på URL — med hash i namnet blir en ändrad ikon en ny URL
+  cachar OG-bilder på URL – med hash i namnet blir en ändrad ikon en ny URL
   som gammal cache inte kan träffa. Manifestet genereras vid bygge i stället
   för att ligga statiskt, eftersom det måste peka på de hashade ikonnamnen.
   Hashen kaskaderar: ändrad ikon ger nytt manifest som ger ny länk i HTML:en.
-- JS och CSS har däremot inga versionerade filnamn, och kan inte ha det — de
+- JS och CSS har däremot inga versionerade filnamn, och kan inte ha det – de
   finns inte som filer utan är inbakade i `index.html`. Den filens färskhet
   är en `Cache-Control`-fråga hos webbhotellet, inte en filnamnsfråga.
 - `base` är `'./'`, inte `'/proof/'`. GitHub Pages ligger på en underväg, men
   en absolut base hade brutit `file://`-körningen. Relativa vägar fungerar i
   båda fallen. Sajt-URL:en för OG-taggarna står i `src/icons/icons.ts`.
 - Worker-spåret bundlas via Vites `?worker&inline` från den typade
-  `src/workers/hash.worker.ts` — samma kod som unit-testas — och startas som
+  `src/workers/hash.worker.ts` – samma kod som unit-testas – och startas som
   Blob-worker, vilket bevarar single-file-distributionen från `file://`.
 - Om worker-hashning faller används streamad main-thread-hashning som fallback,
   inte helfilsläsning.
@@ -222,11 +222,11 @@ Proof är fri programvara: du får sprida och/eller ändra den under villkoren i
 GNU General Public License, publicerad av Free Software Foundation, antingen
 version 3 eller (om du vill) någon senare version.
 
-Programmet sprids i hopp om att vara användbart, men UTAN NÅGON GARANTI — utan
+Programmet sprids i hopp om att vara användbart, men UTAN NÅGON GARANTI – utan
 ens underförstådd garanti om SÄLJBARHET eller LÄMPLIGHET FÖR ETT SÄRSKILT
 ÄNDAMÅL. Se GNU General Public License för mer information.
 
-`SPDX-License-Identifier: GPL-3.0-or-later` — licenstexten finns i
+`SPDX-License-Identifier: GPL-3.0-or-later` – licenstexten finns i
 [`LICENSE`](LICENSE).
 
 Det gäller Proofs **egen** kod: källkoden i `src/`, `index.html`,
@@ -245,11 +245,11 @@ Konkret är det bildfilerna i [`src/icons/`](src/icons/): `proof_logo.svg`,
 
 `proof_logo.svg` bakas in i `dist/index.html` vid bygget. Att bilden hamnar
 inuti en GPL-licensierad fil ändrar inte dess status: själva grafiken förblir
-undantagen. Koden som placerar den — markupen och injektionen i `src/main.ts`
-— är GPL som resten.
+undantagen. Koden som placerar den – markupen och injektionen i `src/main.ts`
+– är GPL som resten.
 
 **Ingen av bildfilerna krävs för att programmet ska fungera.** Appen hashar,
-tidsstämplar och verifierar utan dem — de är identitet och presentation.
+tidsstämplar och verifierar utan dem – de är identitet och presentation.
 Logotypinjektionen är medvetet feltolerant: tas markupen bort startar appen
 ändå, utan logotyp.
 Den som sprider en ändrad version under GPL får byta ut dem mot sina egna,
@@ -289,6 +289,6 @@ licenstexter komponenterna kräver.
 Headern i `index.html` identifierar programmet och pekar mot källkoden. Den
 uppfyller inte i sig någon annans skyldigheter: den som sprider `index.html`
 vidare, särskilt lösryckt från sina grannfiler, har egna skyldigheter enligt
-GPL och de övriga licenserna — bland annat att tillhandahålla licenstexterna
+GPL och de övriga licenserna – bland annat att tillhandahålla licenstexterna
 och Corresponding Source. Att repo-URL:en står i filen gör inte en ensam,
 vidarekopierad `index.html` compliant av sig själv.

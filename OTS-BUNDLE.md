@@ -1,6 +1,6 @@
 # Den vendrade OpenTimestamps-bundlen
 
-Analys av `src/vendor/opentimestamps.min.js` — varför den är 1,5 MB, vad av
+Analys av `src/vendor/opentimestamps.min.js` – varför den är 1,5 MB, vad av
 den vi faktiskt använder, och vad som skulle krävas för att krympa den.
 
 Skriven 2026-09-17 mot `opentimestamps v.0.4.9`. Alla siffror är uppmätta,
@@ -16,7 +16,7 @@ hashen lämnar aldrig enheten.
 
 ## Vad filen är
 
-Det officiella webbläsarbygget av OpenTimestamps, version 0.4.9 — samma fil
+Det officiella webbläsarbygget av OpenTimestamps, version 0.4.9 – samma fil
 som den gamla CDN-taggen serverade. Den injiceras som klassiskt `<script>`
 av `inlineOtsVendor()` i `vite.config.ts`; se kommentaren där för varför den
 inte kan importeras som modul.
@@ -52,16 +52,16 @@ browserifierade bundlen kostar den mer.
 OTS har två sätt att hämta ett Bitcoin-blockhuvud, och paketet innehåller
 båda.
 
-**`bitcoin.js` — lokal Bitcoin Core-nod.** Läser `bitcoin.conf`, plockar
+**`bitcoin.js` – lokal Bitcoin Core-nod.** Läser `bitcoin.conf`, plockar
 `rpcuser`/`rpcpassword` och anropar `getblockheader` över RPC. Det är den
 här vägen som behöver bitcore-libs `BlockHeader`-parsning, ECDSA och
 transaktionshantering.
 
-I en webbläsare är vägen oåtkomlig — det finns inget filsystem och ingen
+I en webbläsare är vägen oåtkomlig – det finns inget filsystem och ingen
 `bitcoin.conf`. Koden ligger där som dödvikt, men drar ändå in hela
 beroendeträdet eftersom browserify inte tree-shakar.
 
-**`esplora.js` — blockstream.info/api.** Det är den väg appen faktiskt tar.
+**`esplora.js` – blockstream.info/api.** Det är den väg appen faktiskt tar.
 Verifieringen av en Bitcoin-attestering reduceras i praktiken till:
 
 ```js
@@ -83,7 +83,7 @@ I stigande risk. Ingen av dem är gjord.
 ### 1. Ingenting
 
 Rimligt val så länge storleken inte gör ont. Kostnaden är en
-engångsnedladdning, inte latens vid användning — appen kör från en lokal
+engångsnedladdning, inte latens vid användning – appen kör från en lokal
 fil. Bundlen är dessutom det officiella, granskade bygget, vilket har ett
 värde i sig för just den här sortens kod.
 
@@ -93,18 +93,18 @@ Bygg från `javascript-opentimestamps` källkod med `bitcoin.js` stubbad, så
 att bitcore kan tree-shakas bort. All verifieringslogik lämnas orörd.
 Rimlig förväntan: 1,5 MB → under 200 kB.
 
-Måttlig risk, och verifierbar — `test/e2e.mjs` har redan ett fixture som ger
+Måttlig risk, och verifierbar – `test/e2e.mjs` har redan ett fixture som ger
 VERIFIED mot en riktigt förankrad tidsstämpel, så en sådan ändring går att
 kontrollera på riktigt och inte bara i teorin.
 
 En komplikation att räkna med: npm-paketet `javascript-opentimestamps` ligger
-på 0.4.5 och drar in `web3`, `moment-timezone` och `request` — alltså värre
+på 0.4.5 och drar in `web3`, `moment-timezone` och `request` – alltså värre
 än den vendrade 0.4.9, som kommer från GitHub-bygget. Källan måste hämtas
 därifrån, inte från npm.
 
 ### 3. Egen .ots-implementation
 
-Formatet är enkelt — uppskattningsvis 300–500 rader för parsning, operationer
+Formatet är enkelt – uppskattningsvis 300–500 rader för parsning, operationer
 och merkle-evaluering. Men då skriver vi om det som hela appens trovärdighet
 vilar på, och byter bort ett granskat bibliotek mot egen kod. Bör inte göras
 utan starkt skäl.

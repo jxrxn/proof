@@ -431,7 +431,7 @@ try {
     compressionOptions: { level: 9 },
   });
   check(bombBytes.length < 100 * 1024 * 1024,
-        `outer bomb ZIP is small (${(bombBytes.length / 1024).toFixed(0)} KB) — inner entry check is what must catch it`);
+        `outer bomb ZIP is small (${(bombBytes.length / 1024).toFixed(0)} KB) – inner entry check is what must catch it`);
 
   const bombDialogsBefore = dialogs.length;
   await page.evaluate(b64 => {
@@ -490,7 +490,7 @@ try {
           document.querySelector('#vr-status-list .status.err'),
     { timeout: 90000 }
   );
-  // Paket-ZIP:en byggs efter att bannern visats — vänta in spara-länken
+  // Paket-ZIP:en byggs efter att bannern visats – vänta in spara-länken
   // (den ska alltid erbjudas vid VERIFIED) innan länkstatus läses.
   await page.waitForFunction(
     () => !document.getElementById('vr-upgraded-link').classList.contains('hidden') ||

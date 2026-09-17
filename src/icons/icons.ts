@@ -4,7 +4,7 @@
 
 export const SITE_URL = 'https://jxrxn.github.io/proof/';
 
-export const APP_NAME = 'Proof — Bitcoin Timestamp';
+export const APP_NAME = 'Proof – Bitcoin Timestamp';
 export const APP_SHORT_NAME = 'Proof';
 export const APP_DESCRIPTION =
   'Timestamp text or a file against the Bitcoin blockchain. The SHA-256 hash ' +

@@ -246,7 +246,7 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
       const OTS = getOts();
 
       status.set('ots', 'Sending SHA-256 digest to OpenTimestamps…', 'info');
-      // detachedFromHashHex tar bara digesten — filinnehållet lämnar aldrig appen.
+      // detachedFromHashHex tar bara digesten – filinnehållet lämnar aldrig appen.
       const detached = detachedFromHashHex(hashHex);
       const calendars = await reachableCalendars();
       throwIfSignalAborted(opSignal);
@@ -258,7 +258,7 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
       );
       throwIfSignalAborted(opSignal);
       const otsBytes = detached.serializeToBytes();
-      status.set('ots', 'Hash submitted to OpenTimestamps. You now have an initial proof (.ots) — Bitcoin anchoring usually completes within 1–6 hours.', 'ok');
+      status.set('ots', 'Hash submitted to OpenTimestamps. You now have an initial proof (.ots) – Bitcoin anchoring usually completes within 1–6 hours.', 'ok');
 
       // Enhetlig namngivning: samma tidsstämpel i ZIP-paketet, i det initiala
       // beviset och (senare) i OpenTimestamps-beviset, så användaren direkt ser
@@ -271,7 +271,7 @@ Filename:   ${originalName}
 Size:       ${size} bytes
 Created:    ${iso}
 Algorithm:  SHA-256
-Status:     Initial proof — NOT yet anchored to Bitcoin.
+Status:     Initial proof – NOT yet anchored to Bitcoin.
             This .ots file does not yet contain Bitcoin verification data.
             Bitcoin anchoring usually completes within 1-6 hours, after which
             the initial proof becomes a full OpenTimestamps proof (see below).

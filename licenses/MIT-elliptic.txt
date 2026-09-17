@@ -1,4 +1,4 @@
-elliptic 6.5.3 — MIT License
+elliptic 6.5.3 – MIT License
 
 Upstream publishes this license text in the project's README rather than a
 separate LICENSE file; it is reproduced verbatim below.

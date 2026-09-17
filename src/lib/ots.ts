@@ -13,7 +13,7 @@ export function getOts(): OpenTimestampsApi {
 
 // Integritetsgränsen mot OpenTimestamps: den här funktionen är det enda
 // stället där appen skapar ett timestamp-objekt för stamping/verifiering, och
-// den tar ENBART den redan beräknade SHA-256-digesten (32 bytes som hex) —
+// den tar ENBART den redan beräknade SHA-256-digesten (32 bytes som hex) –
 // filinnehållet passerar aldrig hit och kan därför inte skickas någonstans.
 export function detachedFromHashHex(hashHex: string): OtsDetachedTimestampFile {
   if (!/^[0-9a-f]{64}$/i.test(hashHex)) {
@@ -34,7 +34,7 @@ const OTS_CALENDARS = [
 ];
 
 export async function reachableCalendars(): Promise<string[]> {
-  // Sondera med en slumpmässig digest mot /digest — samma operation som
+  // Sondera med en slumpmässig digest mot /digest – samma operation som
   // stampningen använder. En server kan svara på GET / men hänga på POST
   // (observerat med catallaxy), så bara ett riktigt POST-svar räknas.
   const junk = crypto.getRandomValues(new Uint8Array(32));

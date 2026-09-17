@@ -11,7 +11,7 @@ import {
 // modulgrafen wrappar Vite chunken i en CommonJS-hjälpare, varpå UMD-wrappern
 // tar module.exports-grenen och window.OpenTimestamps aldrig sätts. Därför
 // injiceras den i stället som ett klassiskt inline-<script> före modulskriptet
-// — exakt samma semantik som den gamla CDN-taggen, och fortfarande en enda
+// – exakt samma semantik som den gamla CDN-taggen, och fortfarande en enda
 // självbärande HTML-fil i dist.
 function inlineOtsVendor(): Plugin {
   const file = fileURLToPath(new URL('./src/vendor/opentimestamps.min.js', import.meta.url));
@@ -37,7 +37,7 @@ function inlineOtsVendor(): Plugin {
 // vanliga Cache-Control-regler, och sociala skrapare cachar OG-bilder på URL.
 // Med hash i namnet blir en ändrad ikon en ny URL, och gammal cache kan inte
 // träffa. Manifestet genereras här i stället för att ligga statiskt, eftersom
-// det måste peka på de hashade ikonnamnen — som inte är kända förrän nu.
+// det måste peka på de hashade ikonnamnen – som inte är kända förrän nu.
 function emitIcons(): Plugin {
   const dir = new URL('./src/icons/', import.meta.url);
   const read = (name: string) => readFileSync(fileURLToPath(new URL(name, dir)));
@@ -101,7 +101,7 @@ function emitIcons(): Plugin {
       order: 'post',
       handler() {
         const href = (name: string) => `./${emitted.get(name) ?? name}`;
-        // OG-bilden måste vara absolut — skrapare löser inte relativa vägar.
+        // OG-bilden måste vara absolut – skrapare löser inte relativa vägar.
         const absolute = (name: string) => new URL(href(name), SITE_URL).href;
 
         const tags: HtmlTagDescriptor[] = [
@@ -139,7 +139,7 @@ function emitIcons(): Plugin {
 
 // Licens- och notismaterial måste följa med den distribuerade byggnaden, inte
 // bara ligga i repot. dist/index.html bakar in all kod och alla typsnitt, så
-// den som får filen får också kopior av komponenterna — och då gäller:
+// den som får filen får också kopior av komponenterna – och då gäller:
 //   GPL-3.0 §4    mottagaren ska få en kopia av licensen
 //   LGPL-3.0 §4a  tydlig notis om att biblioteket används och omfattas av LGPL
 //   LGPL-3.0 §4b  en kopia av BÅDE GPL- och LGPL-texten
@@ -168,9 +168,9 @@ function emitLicenses(): Plugin {
   // index.html kan skiljas från sina grannfiler, så den bär en egen kort
   // header som identifierar programmet och pekar vidare. Licenstexterna
   // ligger kvar i sina filer. Headern befriar inte en vidaredistributör från
-  // egna skyldigheter — den gör inte en lösryckt kopia compliant i sig.
+  // egna skyldigheter – den gör inte en lösryckt kopia compliant i sig.
   const BANNER = `<!--
-  Proof — Bitcoin Timestamp
+  Proof – Bitcoin Timestamp
   Copyright (C) 2026 jxrxn
   SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -211,7 +211,7 @@ function emitLicenses(): Plugin {
 }
 
 // viteSingleFile bakar in all JS/CSS i dist/index.html. Appen förblir därmed
-// körbar direkt från file:// — ikonerna bredvid är rena tillägg som bara
+// körbar direkt från file:// – ikonerna bredvid är rena tillägg som bara
 // används vid webbhosting, och 404:ar oskadligt lokalt.
 export default defineConfig({
   // Relativ base, inte '/proof/'. GitHub Pages ligger på en underväg, men en
@@ -222,7 +222,7 @@ export default defineConfig({
     assetsInlineLimit: (filePath: string) => {
       // Fonterna ska bli data-URI:er så att HTML-filen är självbärande.
       if (filePath.endsWith('.woff2')) return true;
-      // Ikonerna måste förbli egna filer — se emitIcons ovan.
+      // Ikonerna måste förbli egna filer – se emitIcons ovan.
       return false;
     },
   },
