@@ -144,13 +144,18 @@ Det här är ett sekundärt verify-flöde.
   bakar in dem som data-URI:er — annars hade de emitterats som separata assets
   och bygget vore inte längre en enda fil. Uppdateras från
   `@fontsource-variable/inter` och `@fontsource/jetbrains-mono`, båda v5.3.0, OFL.
-- Av Inter ingår subseten latin, latin-ext och vietnamesiska (47 + 83 + 10 kB).
-  De två senare är inte valfria: utan dem täcker Inter latinska språk bara
-  delvis, och polska `Zażółć` renderas med blandade typsnitt inuti samma ord.
-  Grekiska och kyrilliska är medvetet uteslutna (73 kB) — de faller tillbaka
-  enhetligt på systemfonten, vilket bara ser annorlunda ut, inte trasigt.
-  Skript som Inter helt saknar (CJK, arabiska, hebreiska, thai, devanagari)
-  faller alltid tillbaka, oavsett subsets.
+- Av Inter ingår samtliga sju subsets: latin, latin-ext, vietnamesiska,
+  grekiska, grekiska-ext, kyrilliska och kyrilliska-ext (241 kB totalt).
+  `-ext`-varianterna är inte valfria — utan dem täcks språken bara delvis och
+  texten blandar Inter med systemfonten inuti samma ord (polska `Zażółć`,
+  polytonisk grekiska, kyrilliska minoritetsspråk).
+- Skript som Inter helt saknar — CJK, arabiska, hebreiska, thai, devanagari —
+  faller alltid tillbaka på systemfonten oavsett subsets. Det sker för hela
+  stycken, så resultatet ser annorlunda ut men aldrig blandat.
+- Enstaka arkaiska fornkyrkoslaviska tecken (`Ꙋ` U+A64A, `ꙗ` U+A657, `ѿ`
+  U+047F) ligger i `cyrillic-ext`-intervallet men saknas i Inters faktiska
+  filer och faller därför tillbaka. Modern kyrilliska — ryska, ukrainska,
+  serbiska, bulgariska — är helt täckt.
 - `unicode-range` i `@font-face` är nödvändig, inte en optimering: flera
   `@font-face` för samma familj utan intervall gör att bara den sist
   deklarerade används.
