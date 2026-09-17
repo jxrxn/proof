@@ -322,9 +322,10 @@ html, body {
 }
 
 button.secondary {
-  width: fit-content;
-  min-width: 92px;
-  display: inline-flex;
+  /* Ingen egen bredd: båda användningarna sätter sin egen (Create New Proof
+     full bredd, bekräftelseknapparna flex:1). Tidigare fit-content/min-width
+     var död kod som bara tvingade fram överstyrningar. */
+  display: flex;
   align-items: center;
   justify-content: center;
   min-height: var(--control-h);
@@ -580,7 +581,9 @@ button.primary.verify-btn:disabled { background: #2c2c30; border-color: var(--or
   padding: 0 12px;
   background: #0f2417;
   border: 1px solid #275e3c;
-  color: var(--green);
+  /* Samma textfärg som button.secondary, så den mörka ZIP-knappen läses med
+     samma grammatik som övriga sekundära actions. .solid behåller sitt #fff. */
+  color: var(--text);
   text-decoration: none;
   border-radius: 8px;
   margin-top: 10px;
@@ -721,25 +724,64 @@ details a { color: var(--blue); }
   margin-top: 10px;
 }
 
-/* Underrad direkt under paketknappen: beskriver vad paketet innehåller.
-   Medvetet mindre och mattare än statusraderna och den gula varningen - den
-   är referensinformation, inte något användaren behöver agera på. */
-.download-contents {
-  font-size: 0.72rem;
-  line-height: 1.4;
+/* Proof package som egen sektion, utan ram, bakgrund eller avdelare - bara
+   whitespace och typografi. Det stora avståndet uppåt skiljer den från den
+   primära .ots-knappen; avstånden inuti sektionen är märkbart mindre, så den
+   läses som en sammanhållen grupp och som ett underordnat alternativ. */
+.package-section {
+  /* Subtil avdelare: samma kantfärg som korten, med luft på båda sidor så att
+     linjen markerar övergången utan att bli en ram eller ett eget block. */
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--blue-soft-line);
+  /* Avslutar sektionen. Kollapsar med marginalen på det som följer, så samma
+     luft uppstår oavsett om det är Create New Proof eller bekräftelserutan. */
+  margin-bottom: 28px;
+}
+/* Nedre avdelaren bara i CREATED PROOF, där något följer efter sektionen.
+   I Verification Result är den sista i kortet och skulle bli en lös linje. */
+#package-section {
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--blue-soft-line);
+}
+.section-label {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--muted);
-  margin-top: 5px;
+}
+.section-note {
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--muted);
+  margin: 3px 0 10px;
+}
+.package-section .download {
+  margin-top: 0;
+}
+.package-section .share-warning {
+  margin-top: 8px;
 }
 
 /* ── Create New Proof ── */
-/* Sekundär avslutande action i resultatkortet. Ärver .secondary och därmed
-   --control-h och width:fit-content, vilket håller den visuellt underordnad de
-   gröna nedladdningsknapparna. Endast marginalen behöver sättas här. */
+/* Sekundär action, nivå 2: neutral botten med blå kontur - samma blå som en
+   icke-aktiv flik och en inaktiverad primärknapp. Avståndet uppåt lyfter den
+   ur package-sektionen och gör den till nästa fristående steg. */
 .new-proof-btn {
-  margin-top: 10px;
+  width: 100%;
+  margin-top: 24px;
+}
+/* Kvalificerad med button av samma skäl som button.primary.verify-btn:
+   button.secondary sätter border som shorthand och vinner annars. */
+button.new-proof-btn {
+  border-color: var(--blue-deep);
+}
+button.new-proof-btn:hover {
+  border-color: var(--blue-light);
 }
 .new-proof-confirm {
-  margin-top: 10px;
+  margin-top: 24px;
   padding: 11px 12px;
   border: 1px solid var(--orange-line);
   border-radius: 8px;
@@ -760,6 +802,20 @@ details a { color: var(--blue); }
   flex: 1;
   min-width: 140px;
 }
+
+/* ── Knappbredd ── */
+/* Handlingsknapparna går inte längre i full spaltbredd utan högst halva, och
+   centreras i kortet. Gäller primärknapparna, nedladdningslänkarna och
+   Create New Proof - inte flikarna, som är en segmenterad kontroll, och inte
+   knapparna i bekräftelserutan, som sitter parvis i en rad. */
+button.primary,
+.download,
+.new-proof-btn {
+  max-width: 50%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 
 /* ── Utility ── */
 .hidden { display: none !important; }

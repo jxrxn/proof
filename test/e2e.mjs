@@ -141,7 +141,7 @@ try {
   );
   const unsupportedPackage = await page.evaluate(() => ({
     proofHidden: document.getElementById('proof-link').classList.contains('hidden'),
-    packageHidden: document.getElementById('download-link').classList.contains('hidden'),
+    packageHidden: document.getElementById('package-section').classList.contains('hidden'),
     noteText: document.getElementById('package-note').textContent || '',
   }));
   check(!unsupportedPackage.proofHidden, '.ots still works when proof packages are unsupported');
@@ -195,7 +195,7 @@ try {
     () => (
       !document.getElementById('proof-link').classList.contains('hidden') &&
       (
-        !document.getElementById('download-link').classList.contains('hidden') ||
+        !document.getElementById('package-section').classList.contains('hidden') ||
         !document.getElementById('package-note').classList.contains('hidden')
       )
     ) ||
@@ -207,14 +207,14 @@ try {
     hash: document.getElementById('result-hash').textContent,
     proofName: document.getElementById('proof-link').download,
     dlName: document.getElementById('download-link').download,
-    packageHidden: document.getElementById('download-link').classList.contains('hidden'),
+    packageHidden: document.getElementById('package-section').classList.contains('hidden'),
     proofText: document.getElementById('proof-link').textContent,
     packageText: document.getElementById('download-link').textContent,
   }));
   if (stamp.err) { console.log('FAIL: stamp errored: ' + stamp.err); process.exit(1); }
   check(/^[0-9a-f]{64}$/.test(stamp.hash), 'stamp produced a SHA-256 hash');
   check(/^proof_.*_initial\.ots$/.test(stamp.proofName), 'stamp produced an initial .ots proof (' + stamp.proofName + ')');
-  check(stamp.proofText === 'Save proof file (.ots)', '.ots is presented as the primary download after create');
+  check(stamp.proofText === 'Save Timestamp (.ots)', '.ots is presented as the primary download after create');
   check(!stamp.packageHidden && /^proof_.*\.zip$/.test(stamp.dlName), 'stamp produced a proof ZIP (' + stamp.dlName + ')');
   check(stamp.packageText === 'Save proof package (.zip)',
         'proof package is presented as the secondary ZIP download');
@@ -272,7 +272,7 @@ try {
     () => (
       !document.getElementById('proof-link').classList.contains('hidden') &&
       (
-        !document.getElementById('download-link').classList.contains('hidden') ||
+        !document.getElementById('package-section').classList.contains('hidden') ||
         !document.getElementById('package-note').classList.contains('hidden')
       )
     ) ||
@@ -281,7 +281,7 @@ try {
   );
   const largeStamp = await page.evaluate(() => ({
     proofName: document.getElementById('proof-link').download,
-    packageHidden: document.getElementById('download-link').classList.contains('hidden'),
+    packageHidden: document.getElementById('package-section').classList.contains('hidden'),
     noteHidden: document.getElementById('package-note').classList.contains('hidden'),
     noteText: document.getElementById('package-note').textContent,
   }));
@@ -343,7 +343,7 @@ try {
   await new Promise(r => setTimeout(r, 800));   // låt ev. kvardröjande gammal operation hinna "bli klar"
   const newInputDuringStamp = await page.evaluate(() => ({
     proofHidden: document.getElementById('proof-link').classList.contains('hidden'),
-    packageHidden: document.getElementById('download-link').classList.contains('hidden'),
+    packageHidden: document.getElementById('package-section').classList.contains('hidden'),
     resultHidden: document.getElementById('result-content').classList.contains('hidden'),
     fileName: document.getElementById('file-name').textContent,
     generateEnabled: !document.getElementById('generate').disabled,
@@ -497,14 +497,14 @@ try {
   // Paket-ZIP:en byggs efter att bannern visats – vänta in spara-länken
   // (den ska alltid erbjudas vid VERIFIED) innan länkstatus läses.
   await page.waitForFunction(
-    () => !document.getElementById('vr-upgraded-link').classList.contains('hidden') ||
+    () => !document.getElementById('vr-package-section').classList.contains('hidden') ||
           document.querySelector('#vr-status-list .status.err'),
     { timeout: 15000 }
   );
   const fixture = await page.evaluate(() => ({
     banner: document.querySelector('#vr-status-list .verdict-banner')?.className || null,
     bannerText: document.querySelector('#vr-status-list .verdict-banner')?.textContent.slice(0, 140) || null,
-    linkHidden: document.getElementById('vr-upgraded-link').classList.contains('hidden'),
+    linkHidden: document.getElementById('vr-package-section').classList.contains('hidden'),
     linkText: document.getElementById('vr-upgraded-link').textContent,
     linkName: document.getElementById('vr-upgraded-link').download,
     btnDisabled: document.getElementById('verify-btn').disabled,
@@ -576,7 +576,7 @@ try {
   const verifyCancelled = await page.evaluate(() => ({
     text: document.getElementById('verify-operation-text').textContent,
     resultHidden: document.getElementById('verify-result-content').classList.contains('hidden'),
-    downloadHidden: document.getElementById('vr-upgraded-link').classList.contains('hidden'),
+    downloadHidden: document.getElementById('vr-package-section').classList.contains('hidden'),
     retryEnabled: !document.getElementById('verify-btn').disabled,
   }));
   check(verifyCancelled.text.includes('cancelled'), 'cancel during verify hashing reports a cancelled state');
@@ -606,7 +606,7 @@ try {
   const newInputDuringVerify = await page.evaluate(() => ({
     banner: document.querySelector('#vr-status-list .verdict-banner')?.className ?? null,
     resultHidden: document.getElementById('verify-result-content').classList.contains('hidden'),
-    downloadHidden: document.getElementById('vr-upgraded-link').classList.contains('hidden'),
+    downloadHidden: document.getElementById('vr-package-section').classList.contains('hidden'),
     origName: document.getElementById('vorig-name').textContent,
     retryEnabled: !document.getElementById('verify-btn').disabled,
   }));
@@ -694,7 +694,7 @@ try {
   await new Promise(r => setTimeout(r, 900));
   check(dialogs.includes('Start fresh with a new proof?'),
         'saving the verified package asks to start fresh');
-  check(!await page.$eval('#vr-upgraded-link', el => el.classList.contains('hidden')),
+  check(!await page.$eval('#vr-package-section', el => el.classList.contains('hidden')),
         'cancelling the dialog keeps the result intact');
 
   if (errors.length) { console.log('page errors:', errors); failures++; }

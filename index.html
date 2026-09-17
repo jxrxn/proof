@@ -125,11 +125,14 @@
       <div class="result-label">SHA-256</div>
       <div class="hash" id="result-hash"></div>
       <div id="status-list" role="status" aria-live="polite"></div>
-      <a class="download solid hidden" id="proof-link">Save proof file (.ots)</a>
+      <a class="download solid hidden" id="proof-link">Save Timestamp (.ots)</a>
       <p class="share-warning hidden" id="package-note">Proof packages include the original file and are currently limited to 100 MB. Save the .ots proof file instead.</p>
-      <a class="download hidden" id="download-link">Save proof package (.zip)</a>
-      <p class="download-contents hidden" id="download-contents">Includes original file, SHA-256, .ots proof and metadata.</p>
-      <p class="share-warning hidden" id="download-warning">Warning: this ZIP contains the original file. Anyone you send the ZIP to can open the original.</p>
+      <div class="package-section hidden" id="package-section">
+        <div class="section-label">Proof package</div>
+        <p class="section-note">Keep the original file and proof together in one ZIP.</p>
+        <a class="download" id="download-link">Save proof package (.zip)</a>
+        <p class="share-warning" id="download-warning">Warning: this ZIP contains the original file. Anyone you send the ZIP to can open the original.</p>
+      </div>
       <div class="new-proof-confirm hidden" id="new-proof-confirm" role="alert">
         <p>This proof has not been downloaded yet. Creating a new proof will discard it.</p>
         <div class="new-proof-actions">
@@ -159,9 +162,12 @@
       <div class="hash" id="vr-hash"></div>
       <div id="vr-status-list" role="status" aria-live="polite"></div>
       <p class="share-warning hidden" id="vr-package-note">Proof packages are unavailable in this browser/app mode. Save the .ots proof file instead.</p>
-      <a class="download solid hidden" id="vr-upgraded-link">Save verified proof package (.zip)</a>
-      <p class="download-contents hidden" id="vr-download-contents">Includes original file, SHA-256, .ots proof and metadata.</p>
-      <p class="share-warning hidden" id="vr-download-warning">Warning: this ZIP contains the original file. Anyone you send the ZIP to can open the original.</p>
+      <div class="package-section hidden" id="vr-package-section">
+        <div class="section-label">Proof package</div>
+        <p class="section-note">Keep the original file and proof together in one ZIP.</p>
+        <a class="download solid" id="vr-upgraded-link">Save verified proof package (.zip)</a>
+        <p class="share-warning" id="vr-download-warning">Warning: this ZIP contains the original file. Anyone you send the ZIP to can open the original.</p>
+      </div>
     </div>
   </div>
 

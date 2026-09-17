@@ -40,7 +40,7 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
   const downloadWarning = byId('download-warning');
   const packageNote     = byId('package-note');
   const packageCapabilityCopy = byId('package-capability-copy');
-  const downloadContents = byId('download-contents');
+  const packageSection  = byId('package-section');
   const dropPrompt      = byId('drop-prompt');
   const resultContent   = byId('result-content');
   const resultEmpty     = byId('result-empty');
@@ -82,9 +82,7 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
 
   function clearDownload() {
     proofLink.classList.add('hidden');
-    downloadLink.classList.add('hidden');
-    downloadContents.classList.add('hidden');
-    downloadWarning.classList.add('hidden');
+    packageSection.classList.add('hidden');
     packageNote.classList.add('hidden');
     if (currentProofUrl) {
       URL.revokeObjectURL(currentProofUrl);
@@ -362,9 +360,7 @@ How this proof works (4 stages):
         currentPackageUrl = URL.createObjectURL(blob);
         downloadLink.href = currentPackageUrl;
         downloadLink.download = folderName + '.zip';
-        downloadLink.classList.remove('hidden');
-        downloadContents.classList.remove('hidden');
-        downloadWarning.classList.remove('hidden');
+        packageSection.classList.remove('hidden');
       } else if (!packageCapability.supported) {
         packageNote.textContent =
           packageCapability.reason ??
