@@ -122,14 +122,29 @@ html, body {
    headern i övrigt fortsätter baseline-justera underrubriken mot h1. */
 .brand {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 9px;
 }
+/* Märkets höjd. Referenspunkter: 1.768rem ger ringens P exakt samma cap-höjd
+   som P i ordmärket, 2rem något större än så. Märket växer uppåt eftersom
+   underkanten hålls fast (se translateY nedan), så en större höjd lyfter
+   ringen utan att flytta dess fot. */
 .brand-mark {
-  width: 22px;
-  height: 22px;
+  width: 2.2rem;
+  height: 2.2rem;
   flex: none;
   line-height: 0;
+  /* Centrerat i stället för baseline-justerat: en SVG:s baslinje är dess
+     underkant, vilket hade sänkt märket. Att märket står utanför
+     baseline-justeringen gör dessutom att .brand exponerar h1:s baslinje uppåt
+     i headern, så att underrubriken hamnar på samma linje som Proof. */
+  align-self: center;
+  /* Låser märkets underkant 8.15 px under baslinjen, så att en ändrad höjd
+     skalar uppåt i stället för åt båda håll. Flex placerar märket med
+     överkant vid h1:s ascender (1.1429rem över baslinjen), alltså:
+       skift = 1.725rem - märkeshöjd = 1.725 - 2.2 = -0.475rem
+     Ändras höjden ovan räknas skiftet om med samma formel. */
+  transform: translateY(-0.475rem);
 }
 .brand-mark svg {
   width: 100%;
