@@ -129,6 +129,7 @@ Det här är ett sekundärt verify-flöde.
 - `src/lib/packageCapability.ts` — capability/policy för proof package
 - `src/lib/ots.ts` — digest-only-gräns mot OpenTimestamps
 - `src/vendor/opentimestamps.min.js` — vendrad OpenTimestamps-bundle v0.4.9
+- `OTS-BUNDLE.md` — analys av den vendrade bundlens storlek och beroenden
 - `src/fonts/` — vendrade latin-subsets av Inter och JetBrains Mono (woff2)
 - `test/fixtures/` — officiellt hello-world-exempel för VERIFIED-flödet
 - `legacy/proof.html` — gammal arkiverad version; använd inte den som app
@@ -137,6 +138,11 @@ Det här är ett sekundärt verify-flöde.
 
 - `detachedFromHashHex()` i `src/lib/ots.ts` är den viktiga digest-only-boundaryn
   mot OpenTimestamps.
+- Den vendrade OTS-bundlen är 1,5 MB, varav merparten är `bitcore-lib` med
+  beroenden. Det finns där för OTS lokala Bitcoin-node-väg (`bitcoin.js`,
+  RPC mot `bitcoin.conf`), som är oåtkomlig i en webbläsare — vi går alltid
+  via `esplora.js` mot blockstream.info. Se `OTS-BUNDLE.md` för mätningar och
+  vad som skulle krävas för att krympa den.
 - `hash-wasm` används för chunkad SHA-256 över `Blob`/`File`.
 - Typsnitten är vendrade som woff2 i stället för att hämtas från Google Fonts.
   Ett CDN-anrop hade brutit både `file://`-körning och löftet att appen inte
