@@ -238,13 +238,20 @@ Licensen ovan gäller programvaran. Den upplåter inga rättigheter till namnet
 **Proof**, Proofs logotyp eller övrig visuell identitet. De tillgångarna är
 undantagna från GPL-3.0-or-later och rättigheterna till dem förbehålls.
 
-Konkret är det bildfilerna i [`src/icons/`](src/icons/): `favicon.svg`,
-`favicon-48-32-16.ico`, `apple-touch-icon.png`, `icon-192.png`,
+Konkret är det bildfilerna i [`src/icons/`](src/icons/): `proof_logo.svg`,
+`favicon.svg`, `favicon-48-32-16.ico`, `apple-touch-icon.png`, `icon-192.png`,
 `icon-512.png`, `icon-maskable-512.png` och `og-image.png`. Metadatamodulen
 `src/icons/icons.ts` är däremot kod och omfattas av GPL som allt annat.
 
+`proof_logo.svg` bakas in i `dist/index.html` vid bygget. Att bilden hamnar
+inuti en GPL-licensierad fil ändrar inte dess status: själva grafiken förblir
+undantagen. Koden som placerar den — markupen och injektionen i `src/main.ts`
+— är GPL som resten.
+
 **Ingen av bildfilerna krävs för att programmet ska fungera.** Appen hashar,
 tidsstämplar och verifierar utan dem — de är identitet och presentation.
+Logotypinjektionen är medvetet feltolerant: tas markupen bort startar appen
+ändå, utan logotyp.
 Den som sprider en ändrad version under GPL får byta ut dem mot sina egna,
 vilket är vad licensen förutsätter. Undantaget skapar därför ingen motsägelse
 mot GPL:s krav.

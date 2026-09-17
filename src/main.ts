@@ -1,10 +1,26 @@
 import './style.css';
+// ?raw i stället för asset-import: logotypen bakas in i bundlen, så headern
+// renderas även när index.html öppnas ensam. Filen ligger med övriga
+// varumärkestillgångar i src/icons/ och inte i markupen, eftersom de är
+// undantagna från GPL medan index.html inte är det.
+import brandMark from './icons/proof_logo.svg?raw';
 import { hashBlobInWorker } from './lib/hashWorkerClient';
 import type { PackageCapability } from './lib/packageCapability';
 import { TEST_HOOKS_ENABLED } from './lib/testHooks';
 import { createOperationUi, type OperationState } from './lib/operationUi';
 import { initStamp } from './stamp';
 import { initVerify, type VerifyPanel } from './verify';
+
+// Medvetet getElementById i stället för byId: byId kastar när elementet
+// saknas. Logotypen är en varumärkestillgång som inte krävs för att programmet
+// ska fungera, så den som tar bort markupen ska få en app utan logotyp — inte
+// en app som kraschar vid start.
+// innerHTML är säkert här till skillnad från statusrader: innehållet är vår
+// egen statiska SVG från bygget, aldrig data från en fil eller ett API.
+const brandMarkEl = document.getElementById('brand-mark');
+if (brandMarkEl) {
+  brandMarkEl.innerHTML = brandMark;
+}
 
 // Ny input på ena sidan nollställer den andra, så att kortens innehåll aldrig
 // visar resultat som hör till en tidigare fil/text.

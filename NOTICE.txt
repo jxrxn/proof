@@ -44,11 +44,16 @@ It does not grant rights to the "Proof" name, the Proof logo, or other brand
 identity. Those assets are excluded from the license and rights to them are
 reserved. In this distribution they are the icon and image files:
 favicon.*, apple-touch-icon.*, icon-192.*, icon-512.*, icon-maskable-512.*
-and og-image.*.
+and og-image.*, together with the Proof logo artwork embedded in index.html.
+
+The logo being embedded inside a GPL-licensed file does not change its
+status: the artwork itself stays excluded. The code that places it is GPL
+like the rest.
 
 None of these assets is required for the software to function. The program
 runs, hashes, timestamps and verifies without them; they are identity and
-presentation only. Anyone redistributing a modified version under the GPL may
+presentation only. Removing the logo markup leaves a working application
+without a logo, not a broken one. Anyone redistributing a modified version under the GPL may
 replace them with their own, which is what the license expects.
 
 No claim is made here that "Proof" is a registered trademark, and nothing in
