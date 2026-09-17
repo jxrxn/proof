@@ -129,6 +129,7 @@ Det här är ett sekundärt verify-flöde.
 - `src/lib/packageCapability.ts` — capability/policy för proof package
 - `src/lib/ots.ts` — digest-only-gräns mot OpenTimestamps
 - `src/vendor/opentimestamps.min.js` — vendrad OpenTimestamps-bundle v0.4.9
+- `src/fonts/` — vendrade latin-subsets av Inter och JetBrains Mono (woff2)
 - `test/fixtures/` — officiellt hello-world-exempel för VERIFIED-flödet
 - `legacy/proof.html` — gammal arkiverad version; använd inte den som app
 
@@ -137,6 +138,13 @@ Det här är ett sekundärt verify-flöde.
 - `detachedFromHashHex()` i `src/lib/ots.ts` är den viktiga digest-only-boundaryn
   mot OpenTimestamps.
 - `hash-wasm` används för chunkad SHA-256 över `Blob`/`File`.
+- Typsnitten är vendrade som woff2 i stället för att hämtas från Google Fonts.
+  Ett CDN-anrop hade brutit både `file://`-körning och löftet att appen inte
+  pratar med någon utomstående. `build.assetsInlineLimit` är höjd så att Vite
+  bakar in dem som data-URI:er — annars hade de emitterats som separata assets
+  och bygget vore inte längre en enda fil. Endast latin-subseten ingår (47 + 21 kB);
+  alla subsets hade kostat 213 kB för Inter ensamt. Uppdateras från
+  `@fontsource-variable/inter` och `@fontsource/jetbrains-mono`, båda v5.3.0, OFL.
 - Worker-spåret bundlas via Vites `?worker&inline` från den typade
   `src/workers/hash.worker.ts` — samma kod som unit-testas — och startas som
   Blob-worker, vilket bevarar single-file-distributionen från `file://`.

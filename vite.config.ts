@@ -27,4 +27,9 @@ function inlineOtsVendor(): Plugin {
 // enda självbärande fil som fungerar direkt från file:// — inga CDN-anrop.
 export default defineConfig({
   plugins: [inlineOtsVendor(), viteSingleFile()],
+  build: {
+    // De vendrade woff2-filerna måste bli data-URI:er, annars skulle Vite
+    // lägga dem som separata assets och bygget vore inte längre en enda fil.
+    assetsInlineLimit: 256 * 1024,
+  },
 });

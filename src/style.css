@@ -22,12 +22,34 @@
   --red:            #cc584d;
   --gray-soft:      #1e2025;
   --gray-line:      #353a44;
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* ── Typsnitt ──
+   Vendrade latin-subsets (woff2) bakas in som data-URI av Vite, så bygget
+   förblir en enda självbärande fil utan CDN-anrop. Inter är variabel och
+   täcker alla vikter vi använder (400/600/700) i en fil. */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(./fonts/inter-latin-wght.woff2) format('woff2-variations');
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url(./fonts/jetbrains-mono-latin-400.woff2) format('woff2');
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--font-sans);
   background: var(--bg);
   color: var(--text);
   font-size: 14px;
@@ -415,7 +437,7 @@ button.primary.verify-btn:disabled { background: #2c2c30; border-color: var(--or
 
 /* ── Hash display ── */
 .hash {
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-family: var(--font-mono);
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border);
   padding: 9px 11px;
@@ -465,7 +487,7 @@ button.primary.verify-btn:disabled { background: #2c2c30; border-color: var(--or
 details { margin-top: 11px; }
 summary  { font-size: 0.78rem; cursor: pointer; color: var(--blue); user-select: none; }
 details p { font-size: 0.78rem; color: var(--muted); margin: 6px 0; line-height: 1.5; }
-details code { background: rgba(255, 255, 255, 0.06); padding: 1px 4px; border-radius: 3px; font-size: 0.72rem; color: #7ec8ff; }
+details code { font-family: var(--font-mono); background: rgba(255, 255, 255, 0.06); padding: 1px 4px; border-radius: 3px; font-size: 0.72rem; color: #7ec8ff; }
 details a { color: var(--blue); }
 
 /* ── Result labels ── */
