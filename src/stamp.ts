@@ -40,7 +40,7 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
   const downloadWarning = byId('download-warning');
   const packageNote     = byId('package-note');
   const packageCapabilityCopy = byId('package-capability-copy');
-  const packageModeEl   = byId('result-package-mode');
+  const downloadContents = byId('download-contents');
   const dropPrompt      = byId('drop-prompt');
   const resultContent   = byId('result-content');
   const resultEmpty     = byId('result-empty');
@@ -63,16 +63,12 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
         'Optional: save a proof package (.zip) containing both the original file and its proof. ' +
         `Proof packages are limited to ${Math.round(packageCapability.maxBytes / 1048576)} MB in this browser; ` +
         'saving the .ots proof itself supports larger files.';
-      packageModeEl.textContent =
-        'Optional secondary download: proof package (.zip, includes original file)';
       return;
     }
 
     packageCapabilityCopy.textContent =
       packageCapability.reason ??
       'Proof packages are unavailable in this browser/app mode. Save the .ots proof file instead.';
-    packageModeEl.textContent =
-      'Secondary download unavailable in this browser/app mode: save the proof file (.ots) instead.';
   }
 
   function refreshPackageCapability(): void {
@@ -87,6 +83,7 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
   function clearDownload() {
     proofLink.classList.add('hidden');
     downloadLink.classList.add('hidden');
+    downloadContents.classList.add('hidden');
     downloadWarning.classList.add('hidden');
     packageNote.classList.add('hidden');
     if (currentProofUrl) {
@@ -252,7 +249,7 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
       byId('result-size').textContent = 'Size: ' + formatBytes(size);
       byId('result-hash').textContent = hashHex;
       showResultContent();
-      status.set('hash', 'SHA-256 created locally. Your original file was not uploaded.', 'ok');
+      status.set('hash', 'SHA-256 hash created locally. Your original file was not uploaded.', 'ok');
       operationUi.set({
         state: 'stamping',
         message: 'Sending SHA-256 digest to OpenTimestamps…',
@@ -366,6 +363,7 @@ How this proof works (4 stages):
         downloadLink.href = currentPackageUrl;
         downloadLink.download = folderName + '.zip';
         downloadLink.classList.remove('hidden');
+        downloadContents.classList.remove('hidden');
         downloadWarning.classList.remove('hidden');
       } else if (!packageCapability.supported) {
         packageNote.textContent =

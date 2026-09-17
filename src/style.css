@@ -282,20 +282,16 @@ html, body {
   margin-top: auto;
 }
 
+/* Ingen bakgrund, ram eller radie: statusraden är text, inte en kontroll, och
+   ramen fick den att läsas som en knapp - dessutom i en höjd som inte följde
+   --control-h. Texten ligger nu direkt mot kortets bakgrund. Progressbaren och
+   Cancel-knappen har egen visuell tyngd och behöver ingen behållare. */
 .operation-ui {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 8px;
   margin: 2px 0 10px;
-  padding: 10px 11px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
-}
-#stamp-input-card .operation-ui {
-  border: 1px solid rgba(136, 199, 255, 0.2);
-}
-#verify-input-card .operation-ui {
-  border: 1px solid rgba(255, 184, 77, 0.2);
 }
 .operation-text {
   font-size: 0.78rem;
@@ -723,6 +719,16 @@ details a { color: var(--blue); }
 
 .footer-panel p + p {
   margin-top: 10px;
+}
+
+/* Underrad direkt under paketknappen: beskriver vad paketet innehåller.
+   Medvetet mindre och mattare än statusraderna och den gula varningen - den
+   är referensinformation, inte något användaren behöver agera på. */
+.download-contents {
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--muted);
+  margin-top: 5px;
 }
 
 /* ── Create New Proof ── */

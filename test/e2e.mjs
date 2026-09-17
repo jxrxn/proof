@@ -216,7 +216,7 @@ try {
   check(/^proof_.*_initial\.ots$/.test(stamp.proofName), 'stamp produced an initial .ots proof (' + stamp.proofName + ')');
   check(stamp.proofText === 'Save proof file (.ots)', '.ots is presented as the primary download after create');
   check(!stamp.packageHidden && /^proof_.*\.zip$/.test(stamp.dlName), 'stamp produced a proof ZIP (' + stamp.dlName + ')');
-  check(stamp.packageText === 'Save proof package (.zip, includes original file)',
+  check(stamp.packageText === 'Save proof package (.zip)',
         'proof package is presented as the secondary ZIP download');
   check(!await page.$eval('#download-warning', el => el.classList.contains('hidden')),
         'original-file warning shown next to the stamp download link');
@@ -512,7 +512,7 @@ try {
   }));
   console.log('fixture verify:', JSON.stringify(fixture, null, 1));
   check(fixture.banner?.includes('verified'), 'anchored fixture gives VERIFIED verdict');
-  check(!fixture.linkHidden && fixture.linkText === 'Save verified proof package (.zip, includes original file)',
+  check(!fixture.linkHidden && fixture.linkText === 'Save verified proof package (.zip)',
         'repackaged proof ZIP offered after VERIFIED');
   check(!await page.$eval('#vr-download-warning', el => el.classList.contains('hidden')),
         'original-file warning shown next to the verify download link');

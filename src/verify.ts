@@ -137,6 +137,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
   const resultCard        = byId('verify-result-card');
   const vrUpgradedLink    = byId('vr-upgraded-link', HTMLAnchorElement);
   const vrDownloadWarning = byId('vr-download-warning');
+  const vrDownloadContents = byId('vr-download-contents');
   const vrPackageNote     = byId('vr-package-note');
   const cancelBtn         = byId('verify-operation-cancel', HTMLButtonElement);
   const verifyPackageModeNote = byId('verify-package-mode-note');
@@ -167,6 +168,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     vstatus.clear();
     byId('vr-hash').textContent = '';
     vrUpgradedLink.classList.add('hidden');
+    vrDownloadContents.classList.add('hidden');
     vrDownloadWarning.classList.add('hidden');
     vrPackageNote.classList.add('hidden');
     if (currentUpgradedUrl) {
@@ -389,6 +391,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
 
     vstatus.clear();
     vrUpgradedLink.classList.add('hidden');
+    vrDownloadContents.classList.add('hidden');
     showVerifyContent();
     byId('vr-hash').textContent = hashHex;
 
@@ -546,9 +549,10 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
       vrUpgradedLink.href = currentUpgradedUrl;
       vrUpgradedLink.download = folderName + '.zip';
       vrUpgradedLink.textContent = verdict === 'verified'
-        ? 'Save verified proof package (.zip, includes original file)'
-        : 'Save updated proof package (.zip, includes original file)';
+        ? 'Save verified proof package (.zip)'
+        : 'Save updated proof package (.zip)';
       vrUpgradedLink.classList.remove('hidden');
+      vrDownloadContents.classList.remove('hidden');
       vrDownloadWarning.classList.remove('hidden');
     }
 
