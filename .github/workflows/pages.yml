@@ -1,0 +1,53 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Minsta rättigheter som de officiella Pages-actionsen kräver.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Låt en pågående deployment slutföras i stället för att avbrytas.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - run: npm ci
+
+      # e2e körs inte här: den kräver Chrome och når verkliga
+      # OpenTimestamps-kalendrar. Den körs lokalt före release.
+      - run: npm run test:unit
+
+      # Kör tsc --noEmit och därefter vite build -> dist/
+      - run: npm run build
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

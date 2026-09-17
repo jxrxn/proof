@@ -29,13 +29,30 @@ npm run e2e        # bygger testvariant + kör end-to-end-röktest i Chrome (kr�
 
 Själva appen är **en enda självbärande HTML-fil** (`dist/index.html`) med all
 JS, CSS och alla typsnitt inbakade. Ingen separat worker-fil, `.wasm`-fil
-eller CDN-resurs krävs, och filen kan köras direkt från `file://`.
+eller CDN-resurs krävs, vilket gör filen mycket portabel — den kan flyttas,
+kopieras och öppnas som en ensam fil.
 
 Bredvid den emitteras ikoner, `manifest.webmanifest` och OG-bilden som egna
 filer. De behövs bara vid webbhosting — ett PWA-manifest måste vara en egen
 fil för att vara installerbart, Safari hämtar apple-touch-icon som URL, och
 OG-bilder läses av externa skrapare som kräver absolut URL. Kopierar man bara
-`index.html` fungerar appen fullt ut; ikonlänkarna 404:ar oskadligt.
+`index.html` följer de inte med, och ikonlänkarna 404:ar oskadligt.
+
+### Vad som gäller vid körning från `file://`
+
+Skilj på två saker:
+
+- **Lokalt: gränssnittet och SHA-256-hashningen** kräver inget nätverk och
+  inget webbhotell. Det fungerar när filen öppnas direkt.
+- **Nätverksberoende: stampning mot kalendrar, `upgrade` och verifiering**
+  kräver cross-origin-anrop från ett `file://`-ursprung, där webbläsare
+  behandlar origin som `null`. Det är verifierat i **Chrome** — `test/e2e.mjs`
+  körs från `file://` utan uppmjukade säkerhetsflaggor och hävdar att verkliga
+  kalender-POST:ar observerades. Det är **inte** verifierat i Firefox eller
+  Safari, som är strängare mot `file://`-ursprung.
+
+Hostad över HTTPS gäller inte den reservationen — då är ursprunget normalt.
+Det är den distributionsform appen är avsedd för.
 
 ## Användning
 
@@ -196,3 +213,75 @@ Det här är ett sekundärt verify-flöde.
   aldrig kan skrivas mot en ny fil.
 - Avbrott (`AbortController`) är chunk-granulära: en pågående chunk avslutas
   innan hashningen stannar helt.
+
+## Licens
+
+Copyright (C) 2026 jxrxn
+
+Proof är fri programvara: du får sprida och/eller ändra den under villkoren i
+GNU General Public License, publicerad av Free Software Foundation, antingen
+version 3 eller (om du vill) någon senare version.
+
+Programmet sprids i hopp om att vara användbart, men UTAN NÅGON GARANTI — utan
+ens underförstådd garanti om SÄLJBARHET eller LÄMPLIGHET FÖR ETT SÄRSKILT
+ÄNDAMÅL. Se GNU General Public License för mer information.
+
+`SPDX-License-Identifier: GPL-3.0-or-later` — licenstexten finns i
+[`LICENSE`](LICENSE).
+
+Det gäller Proofs **egen** kod: källkoden i `src/`, `index.html`,
+byggkonfigurationen och testerna.
+
+### Namn, logotyp och varumärke
+
+Licensen ovan gäller programvaran. Den upplåter inga rättigheter till namnet
+**Proof**, Proofs logotyp eller övrig visuell identitet. De tillgångarna är
+undantagna från GPL-3.0-or-later och rättigheterna till dem förbehålls.
+
+Konkret är det bildfilerna i [`src/icons/`](src/icons/): `favicon.svg`,
+`favicon-48-32-16.ico`, `apple-touch-icon.png`, `icon-192.png`,
+`icon-512.png`, `icon-maskable-512.png` och `og-image.png`. Metadatamodulen
+`src/icons/icons.ts` är däremot kod och omfattas av GPL som allt annat.
+
+**Ingen av bildfilerna krävs för att programmet ska fungera.** Appen hashar,
+tidsstämplar och verifierar utan dem — de är identitet och presentation.
+Den som sprider en ändrad version under GPL får byta ut dem mot sina egna,
+vilket är vad licensen förutsätter. Undantaget skapar därför ingen motsägelse
+mot GPL:s krav.
+
+Inget anspråk görs här på att "Proof" är ett registrerat varumärke.
+
+### Tredjepartskomponenter
+
+Proof gör inga anspråk på OpenTimestamps, Bitcoin, eller någon annan
+tredjepartskod, specifikation eller varumärke. **Varje tredjepartskomponent
+behåller sin egen licens och sina egna upphovsrättsinnehavare**, och Proofs
+licensval ändrar inte det.
+
+Den byggda `dist/index.html` bakar in allt i en fil, så den som får filen får
+också kopior av komponenterna:
+
+| Komponent | Licens |
+|---|---|
+| OpenTimestamps 0.4.9 | LGPL-3.0-or-later |
+| Inter, JetBrains Mono | OFL-1.1 |
+| hash-wasm | MIT |
+| jszip | MIT OR GPL-3.0-or-later |
+
+**OpenTimestamps-biblioteket används av Proof, och biblioteket och dess
+användning omfattas av GNU Lesser General Public License version 3.**
+
+Fullständig attribution, versioner, proveniens och licenstexter finns i
+[`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md) och [`licenses/`](licenses/).
+
+Bygget tar med sig det som krävs: `dist/` innehåller `LICENSE.txt`,
+[`NOTICE.txt`](NOTICE.txt) och en `licenses/`-katalog, och `index.html` bär en
+kort notis överst. **`dist/` som helhet** bär alltså de notiser och
+licenstexter komponenterna kräver.
+
+Headern i `index.html` identifierar programmet och pekar mot källkoden. Den
+uppfyller inte i sig någon annans skyldigheter: den som sprider `index.html`
+vidare, särskilt lösryckt från sina grannfiler, har egna skyldigheter enligt
+GPL och de övriga licenserna — bland annat att tillhandahålla licenstexterna
+och Corresponding Source. Att repo-URL:en står i filen gör inte en ensam,
+vidarekopierad `index.html` compliant av sig själv.

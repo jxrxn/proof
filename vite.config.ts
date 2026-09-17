@@ -137,6 +137,79 @@ function emitIcons(): Plugin {
   };
 }
 
+// Licens- och notismaterial måste följa med den distribuerade byggnaden, inte
+// bara ligga i repot. dist/index.html bakar in all kod och alla typsnitt, så
+// den som får filen får också kopior av komponenterna — och då gäller:
+//   GPL-3.0 §4    mottagaren ska få en kopia av licensen
+//   LGPL-3.0 §4a  tydlig notis om att biblioteket används och omfattas av LGPL
+//   LGPL-3.0 §4b  en kopia av BÅDE GPL- och LGPL-texten
+//   OFL-1.1 §2    copyright och licens med varje kopia av typsnitten
+//   MIT           notisen ska följa med alla kopior
+//
+// Filerna emitteras separat i stället för att bakas in i HTML:en. OFL tillåter
+// uttryckligen "stand-alone text files", och 43 kB licenstext i en data-URI
+// hade varken varit läsbart eller till nytta. Källfilerna är de som redan
+// finns i repot, så det finns bara en uppsättning att underhålla.
+function emitLicenses(): Plugin {
+  const DISTRIBUTED: Array<[string, string]> = [
+    // I dist/                                  // Källa i repot
+    ['LICENSE.txt',                             'LICENSE'],
+    ['NOTICE.txt',                              'NOTICE.txt'],
+    ['licenses/LGPL-3.0-opentimestamps.txt',    'licenses/opentimestamps-LGPL-3.0.txt'],
+    ['licenses/OFL-1.1-Inter.txt',              'src/fonts/LICENSE-Inter.txt'],
+    ['licenses/OFL-1.1-JetBrainsMono.txt',      'src/fonts/LICENSE-JetBrainsMono.txt'],
+    ['licenses/MIT-hash-wasm.txt',              'licenses/MIT-hash-wasm.txt'],
+    ['licenses/MIT-jszip.txt',                  'licenses/MIT-jszip.txt'],
+    ['licenses/MIT-bitcore-lib.txt',            'licenses/MIT-bitcore-lib.txt'],
+    ['licenses/MIT-elliptic.txt',               'licenses/MIT-elliptic.txt'],
+  ];
+
+  // LGPL §4a kräver notisen med VARJE kopia av den kombinerade byggnaden.
+  // index.html kan skiljas från sina grannfiler, så den bär en egen kort
+  // header som identifierar programmet och pekar vidare. Licenstexterna
+  // ligger kvar i sina filer. Headern befriar inte en vidaredistributör från
+  // egna skyldigheter — den gör inte en lösryckt kopia compliant i sig.
+  const BANNER = `<!--
+  Proof — Bitcoin Timestamp
+  Copyright (C) 2026 jxrxn
+  SPDX-License-Identifier: GPL-3.0-or-later
+
+  Free software under the GNU General Public License, version 3 or later.
+  A copy of the license is in LICENSE.txt next to this file.
+
+  This file bundles third-party components. The OpenTimestamps library is
+  used by it, and the library and its use are covered by the GNU Lesser
+  General Public License, version 3. Fonts are under the SIL Open Font
+  License 1.1. See NOTICE.txt and licenses/ next to this file.
+
+  The Proof name, logo and brand assets are not covered by the GPL and are
+  excluded from it; see NOTICE.txt. They are not required to run this
+  program.
+
+  Source code: https://github.com/jxrxn/proof
+-->
+`;
+
+  return {
+    name: 'emit-licenses',
+    generateBundle() {
+      for (const [fileName, src] of DISTRIBUTED) {
+        this.emitFile({
+          type: 'asset',
+          fileName,
+          source: readFileSync(fileURLToPath(new URL('./' + src, import.meta.url))),
+        });
+      }
+    },
+    transformIndexHtml: {
+      order: 'post',
+      handler(html) {
+        return BANNER + html;
+      },
+    },
+  };
+}
+
 // viteSingleFile bakar in all JS/CSS i dist/index.html. Appen förblir därmed
 // körbar direkt från file:// — ikonerna bredvid är rena tillägg som bara
 // används vid webbhosting, och 404:ar oskadligt lokalt.
@@ -144,7 +217,7 @@ export default defineConfig({
   // Relativ base, inte '/proof/'. GitHub Pages ligger på en underväg, men en
   // absolut base hade brutit file://-körningen. Relativa vägar fungerar i båda.
   base: './',
-  plugins: [inlineOtsVendor(), emitIcons(), viteSingleFile()],
+  plugins: [inlineOtsVendor(), emitIcons(), emitLicenses(), viteSingleFile()],
   build: {
     assetsInlineLimit: (filePath: string) => {
       // Fonterna ska bli data-URI:er så att HTML-filen är självbärande.

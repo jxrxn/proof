@@ -1,0 +1,127 @@
+Proof — Bitcoin Timestamp
+=========================
+
+Copyright (C) 2026 jxrxn
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+details.
+
+You should have received a copy of the GNU General Public License along with
+this program.  It is in LICENSE.txt next to this file.  If not, see
+<https://www.gnu.org/licenses/>.
+
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Source code: https://github.com/jxrxn/proof
+
+
+If you redistribute this build
+------------------------------
+
+The files in this directory — LICENSE.txt, this notice, and licenses/ —
+accompany index.html and carry the notices its components require.
+
+If you pass index.html on, especially separated from these files, you are a
+distributor in your own right and the GPL, LGPL, OFL and MIT terms apply to
+you directly. That includes supplying the license texts and the Corresponding
+Source. The repository URL above identifies where this build came from; it
+does not by itself discharge those obligations for you.
+
+
+Name, logo and brand assets
+---------------------------
+
+The GPL-3.0-or-later license above applies to Proof's software.
+
+It does not grant rights to the "Proof" name, the Proof logo, or other brand
+identity. Those assets are excluded from the license and rights to them are
+reserved. In this distribution they are the icon and image files:
+favicon.*, apple-touch-icon.*, icon-192.*, icon-512.*, icon-maskable-512.*
+and og-image.*.
+
+None of these assets is required for the software to function. The program
+runs, hashes, timestamps and verifies without them; they are identity and
+presentation only. Anyone redistributing a modified version under the GPL may
+replace them with their own, which is what the license expects.
+
+No claim is made here that "Proof" is a registered trademark, and nothing in
+this notice is a statement about enforceability.
+
+
+Third-party components
+----------------------
+
+This build inlines all of its code, styles and fonts into index.html, so a
+copy of index.html also carries copies of the components below. Their license
+texts accompany it in the licenses/ directory.
+
+Each component remains under its own license and its own copyright holders.
+Proof claims no ownership of OpenTimestamps, Bitcoin, or any other
+third-party code, specification or trademark.
+
+
+OpenTimestamps (opentimestamps) 0.4.9 — LGPL-3.0-or-later
+
+  The OpenTimestamps library is used by this program, and the library and its
+  use are covered by the GNU Lesser General Public License, version 3.
+
+  License text:  licenses/LGPL-3.0-opentimestamps.txt
+  GNU GPL text:  LICENSE.txt (as incorporated by the LGPL)
+  Author:        EternityWall
+  Source:        https://github.com/opentimestamps/javascript-opentimestamps
+                 at release tag v0.4.9
+
+  The library is used unmodified. The vendored build is byte-identical to the
+  one published by the upstream project:
+      SHA-256  f6181ae00cce58773f8710894c99d0656058f6a1e08c57360b263cd46c54fbf2
+      Size     1599354 bytes
+
+  That build itself embeds bitcore-lib and elliptic; see their notices below.
+
+
+Inter — SIL Open Font License 1.1
+
+  Copyright 2016 The Inter Project Authors
+  https://github.com/rsms/inter
+
+  License text:  licenses/OFL-1.1-Inter.txt
+
+
+JetBrains Mono — SIL Open Font License 1.1
+
+  Copyright 2020 The JetBrains Mono Project Authors
+  https://github.com/JetBrains/JetBrainsMono
+
+  License text:  licenses/OFL-1.1-JetBrainsMono.txt
+
+
+hash-wasm — MIT
+
+  Copyright (c) 2020 Dani Biro
+  License text:  licenses/MIT-hash-wasm.txt
+
+
+JSZip — MIT (dual licensed MIT or GPLv3; used here under MIT)
+
+  Copyright (c) 2009-2016 Stuart Knightley, David Duponchel,
+  Franz Buchinger, Antonio Afonso
+  License text:  licenses/MIT-jszip.txt
+
+
+bitcore-lib — MIT (embedded inside the OpenTimestamps build)
+
+  Copyright (c) 2013-2019 BitPay, Inc. and others
+  License text:  licenses/MIT-bitcore-lib.txt
+
+
+elliptic — MIT (embedded inside the OpenTimestamps build)
+
+  Copyright Fedor Indutny, 2014
+  License text:  licenses/MIT-elliptic.txt
