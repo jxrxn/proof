@@ -455,7 +455,7 @@ try {
         dialogs[dialogs.length - 1] ===
           'The original file inside this ZIP is larger than 100 MB and cannot be verified in the browser.',
         'zip bomb rejected before extraction with the exact message');
-  check(await page.$eval('#verify-btn', b => !b.disabled && b.textContent === 'Verify proof'),
+  check(await page.$eval('#verify-btn', b => !b.disabled && b.textContent === 'Verify Proof'),
         'app still responsive after zip bomb rejection');
 
   // ── Anchored fixture (OpenTimestamps hello-world example) → full VERIFIED

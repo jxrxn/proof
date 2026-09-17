@@ -742,7 +742,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
       finishVerifyOperation(verdict);
       verifyDone = verdict === 'verified';
       updateVerifyBtn();
-      verifyBtn.textContent = 'Verify proof';
+      verifyBtn.textContent = 'Verify Proof';
     }
   });
 
