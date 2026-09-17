@@ -1,3 +1,5 @@
+import { createAbortError } from './hashShared';
+
 export async function sha256Hex(data: BufferSource): Promise<string> {
   const h = await crypto.subtle.digest('SHA-256', data);
   return Array.from(new Uint8Array(h)).map(b => b.toString(16).padStart(2, '0')).join('');
@@ -23,6 +25,10 @@ export const MAX_FILE_BYTES = 100 * 1024 * 1024;
 
 // Ett giltigt .ots-bevis är typiskt några kB; 10 MB är en generös övre gräns.
 export const MAX_OTS_BYTES = 10 * 1024 * 1024;
+
+export function hasExactTextInput(value: string): boolean {
+  return value.length > 0;
+}
 
 export function fileTooLargeMessage(f: File): string {
   const limitMb = Math.round(MAX_FILE_BYTES / 1048576);
@@ -53,10 +59,28 @@ export function errorMessage(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
 
-export function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+export function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  message: string,
+  signal?: AbortSignal,
+): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let onAbort: (() => void) | undefined;
   const timeout = new Promise<never>((_, reject) => {
     timer = setTimeout(() => reject(new Error(message)), ms);
+    if (!signal) return;
+    if (signal.aborted) {
+      reject(createAbortError());
+      return;
+    }
+    onAbort = () => reject(createAbortError());
+    signal.addEventListener('abort', onAbort, { once: true });
   });
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+  return Promise.race([promise, timeout]).finally(() => {
+    clearTimeout(timer);
+    if (signal && onAbort) {
+      signal.removeEventListener('abort', onAbort);
+    }
+  });
 }

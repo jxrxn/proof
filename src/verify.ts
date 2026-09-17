@@ -5,7 +5,7 @@ import { hashBlobStreaming } from './lib/hash';
 import { hashBlobInWorker } from './lib/hashWorkerClient';
 import { detectPackageCapability } from './lib/packageCapability';
 import {
-  sha256Hex, bytesToHex, errorMessage, withTimeout,
+  sha256Hex, bytesToHex, errorMessage, hasExactTextInput, withTimeout,
   MAX_FILE_BYTES, MAX_OTS_BYTES, fileTooLargeMessage,
 } from './lib/util';
 import { getOts, opentimestampsProofName, detachedFromHashHex } from './lib/ots';
@@ -156,7 +156,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     let ready = false;
     if (vMode === 'vzip')      ready = packageCapability.supported && vZipFile !== null;
     if (vMode === 'vseparate') ready = vOrigFile !== null && vOtsFile !== null;
-    if (vMode === 'vtext')     ready = vtextInput.value.trim() !== '' && vOtsTextFile !== null;
+    if (vMode === 'vtext')     ready = hasExactTextInput(vtextInput.value) && vOtsTextFile !== null;
     verifyBtn.disabled = !ready || verifyDone;
   }
 
@@ -268,6 +268,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     verifyDone = false;
     clearVerifyOthers('vtext');
     clearVerifyResult();
+    opts.onInputActivity();
     updateVerifyBtn();
   });
 
@@ -390,9 +391,10 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     showVerifyContent();
     byId('vr-hash').textContent = hashHex;
 
+    const originalOtsBytes = new Uint8Array(otsBytes);
     let otsDetached: OtsDetachedTimestampFile;
     try {
-      otsDetached = OTS.DetachedTimestampFile.deserialize(otsBytes);
+      otsDetached = OTS.DetachedTimestampFile.deserialize(originalOtsBytes);
     } catch (e) {
       setResultState('failure');
       vstatus.set('parse', 'Could not parse the .ots file: ' + errorMessage(e), 'err');
@@ -416,11 +418,16 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     vstatus.set('upgrade', 'Checking OpenTimestamps for Bitcoin verification data…', 'info');
     let upgradedBytes: Uint8Array | null = null;
     try {
+      const upgradeDetached = OTS.DetachedTimestampFile.deserialize(originalOtsBytes);
       // Timeout-skydd: en hängande kalenderserver får inte hänga verifieringen.
-      const changed = await withTimeout(OTS.upgrade(otsDetached), 30000,
-        'timed out — a calendar server may be down. Try again later.');
+      const changed = await withTimeout(
+        OTS.upgrade(upgradeDetached),
+        30000,
+        'timed out — a calendar server may be down. Try again later.',
+        signal,
+      );
       if (changed) {
-        upgradedBytes = otsDetached.serializeToBytes();
+        upgradedBytes = upgradeDetached.serializeToBytes();
         vstatus.set('upgrade', 'Bitcoin verification data added — you now have a full OpenTimestamps proof', 'ok');
       } else {
         // Gäller både ett redan komplett bevis och ett färskt som ännu inte
@@ -440,8 +447,13 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     try {
       // detachedFromHashHex tar bara digesten — filinnehållet lämnar aldrig appen.
       const fileDetached = detachedFromHashHex(hashHex);
-      const result = await withTimeout(OTS.verify(otsDetached, fileDetached), 30000,
-        'Verification timed out — a calendar server may be down. Try again later.');
+      const proofDetached = OTS.DetachedTimestampFile.deserialize(upgradedBytes ?? originalOtsBytes);
+      const result = await withTimeout(
+        OTS.verify(proofDetached, fileDetached),
+        30000,
+        'Verification timed out — a calendar server may be down. Try again later.',
+        signal,
+      );
       throwIfSignalAborted(signal);
 
       let entries: Array<[string, OtsVerifyAttestation]> = [];
@@ -517,7 +529,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
         original: packageOriginal,
         hashHex,
         otsFileName,
-        otsBytes: otsDetached.serializeToBytes(),
+        otsBytes: upgradedBytes ?? originalOtsBytes,
         readme: verifiedReadme({
           originalName: origName,
           size: packageSize,
@@ -683,8 +695,8 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
         });
 
       } else {
-        const text = vtextInput.value.trim();
-        if (!text)         { alert('Please paste the original text.'); return; }
+        const text = vtextInput.value;
+        if (!hasExactTextInput(text)) { alert('Please paste the original text.'); return; }
         if (!vOtsTextFile) { alert('Please select the .ots proof file.'); return; }
         const fileBytes = new TextEncoder().encode(text);
         const otsBytes  = new Uint8Array(await vOtsTextFile.arrayBuffer());

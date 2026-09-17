@@ -5,7 +5,7 @@ import { hashBlobInWorker } from './lib/hashWorkerClient';
 import { detectPackageCapability } from './lib/packageCapability';
 import { buildProofZip } from './lib/proofPackage';
 import {
-  sha256Hex, formatBytes, formatTimestamp, errorMessage, withTimeout,
+  sha256Hex, formatBytes, formatTimestamp, errorMessage, hasExactTextInput, withTimeout,
 } from './lib/util';
 import { getOts, reachableCalendars, detachedFromHashHex } from './lib/ots';
 import { throwIfSignalAborted } from './lib/hashShared';
@@ -71,7 +71,7 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
   }
 
   function updateStampBtn() {
-    generateBtn.disabled = mode === 'file' ? selectedFile === null : textInput.value.trim() === '';
+    generateBtn.disabled = mode === 'file' ? selectedFile === null : !hasExactTextInput(textInput.value);
   }
 
   function clearDownload() {
@@ -219,8 +219,8 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
           });
         });
       } else {
-        const text = textInput.value.trim();
-        if (!text) { alert('Please enter some text first.'); return; }
+        const text = textInput.value;
+        if (!hasExactTextInput(text)) { alert('Please enter some text first.'); return; }
         originalName = 'text.txt';
         mimeContent = new Blob([text], { type: 'text/plain' });
         const data = new TextEncoder().encode(text);
@@ -250,8 +250,12 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
       const detached = detachedFromHashHex(hashHex);
       const calendars = await reachableCalendars();
       throwIfSignalAborted(opSignal);
-      await withTimeout(OTS.stamp(detached, { calendars }), 30000,
-        'OpenTimestamps calendar servers did not respond. Please try again in a little while.');
+      await withTimeout(
+        OTS.stamp(detached, { calendars }),
+        30000,
+        'OpenTimestamps calendar servers did not respond. Please try again in a little while.',
+        opSignal,
+      );
       throwIfSignalAborted(opSignal);
       const otsBytes = detached.serializeToBytes();
       status.set('ots', 'Hash submitted to OpenTimestamps. You now have an initial proof (.ots) — Bitcoin anchoring usually completes within 1–6 hours.', 'ok');
