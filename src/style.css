@@ -725,6 +725,36 @@ details a { color: var(--blue); }
   margin-top: 10px;
 }
 
+/* ── Create New Proof ── */
+/* Sekundär avslutande action i resultatkortet. Ärver .secondary och därmed
+   --control-h och width:fit-content, vilket håller den visuellt underordnad de
+   gröna nedladdningsknapparna. Endast marginalen behöver sättas här. */
+.new-proof-btn {
+  margin-top: 10px;
+}
+.new-proof-confirm {
+  margin-top: 10px;
+  padding: 11px 12px;
+  border: 1px solid var(--orange-line);
+  border-radius: 8px;
+  background: var(--orange-soft);
+}
+.new-proof-confirm p {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text);
+  margin-bottom: 9px;
+}
+.new-proof-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.new-proof-actions .secondary {
+  flex: 1;
+  min-width: 140px;
+}
+
 /* ── Utility ── */
 .hidden { display: none !important; }
 

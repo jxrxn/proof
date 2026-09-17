@@ -14,7 +14,7 @@
     <h1>Proof</h1>
   </div>
   <p class="sub">
-    Timestamp text or a file. A SHA-256 hash is created on your device and submitted to OpenTimestamps, which later anchors it to the Bitcoin blockchain.
+    Timestamp text or a file. A SHA-256 hash is created on your device and submitted to OpenTimestamps, which combines it with other hashes into a cryptographic commitment that is later anchored to the Bitcoin blockchain.
   </p>
 </header>
 
@@ -137,14 +137,22 @@
       <a class="download solid hidden" id="proof-link">Save proof file (.ots)</a>
       <p class="helper-note">Large files are supported when saving a proof file (.ots).</p>
       <p class="share-warning hidden" id="package-note">Proof packages include the original file and are currently limited to 100 MB. Save the .ots proof file instead.</p>
-      <p class="share-warning hidden" id="download-warning">Warning: this ZIP contains the original file. Anyone you send the ZIP to can open the original.</p>
       <a class="download hidden" id="download-link">Save proof package (.zip, includes original file)</a>
+      <p class="share-warning hidden" id="download-warning">Warning: this ZIP contains the original file. Anyone you send the ZIP to can open the original.</p>
+      <div class="new-proof-confirm hidden" id="new-proof-confirm" role="alert">
+        <p>This proof has not been downloaded yet. Creating a new proof will discard it.</p>
+        <div class="new-proof-actions">
+          <button class="secondary" id="keep-proof">Keep Current Proof</button>
+          <button class="secondary" id="discard-proof">Discard and Create New</button>
+        </div>
+      </div>
+      <button class="secondary new-proof-btn" id="new-proof">Create New Proof</button>
       <details>
         <summary>What is this proof, and what happens next?</summary>
         <p><strong>1. Hash created locally.</strong> A SHA-256 fingerprint of your file or text was computed on your device. The original was never uploaded.</p>
         <p><strong>2. Hash submitted to OpenTimestamps.</strong> Only the hash was sent. In return you received an <code>.ots</code> file – your <em>initial proof</em>. It does not yet contain Bitcoin verification data.</p>
-        <p><strong>3. Bitcoin anchoring (usually 1–6 hours).</strong> OpenTimestamps commits your hash to the Bitcoin blockchain – it is written into a Bitcoin transaction.</p>
-        <p><strong>4. OpenTimestamps proof.</strong> Once anchored, your initial proof becomes a full <em>OpenTimestamps proof</em> – now containing Bitcoin verification data – that anyone can verify against the Bitcoin blockchain, without trusting you, me, or OpenTimestamps.</p>
+        <p><strong>3. Bitcoin anchoring.</strong> OpenTimestamps combines many submitted hashes into a shared cryptographic commitment, which is anchored to the Bitcoin blockchain. Your <code>.ots</code> file contains the cryptographic path needed to prove that your hash was included in that commitment.</p>
+        <p><strong>4. OpenTimestamps proof.</strong> Once the commitment has been anchored, the initial proof can be completed with the Bitcoin verification data, turning it into a full <em>OpenTimestamps proof</em>. Anyone can then verify it against the Bitcoin blockchain without trusting you, me, or OpenTimestamps. You do not need this app to verify it.</p>
         <p>The proof file (.ots) contains only the hash and can be shared freely. The proof package (.zip) also contains a copy of your original file.</p>
         <p>To check the proof, use the Verify panel, run <code>ots verify -f ORIGINAL_FILE PROOF.ots</code>, or visit <a href="https://opentimestamps.org" target="_blank" rel="noopener noreferrer">opentimestamps.org</a>.</p>
       </details>
@@ -161,8 +169,8 @@
       <div id="vr-status-list" role="status" aria-live="polite"></div>
       <p class="helper-note">For large files, verify the original file together with its .ots proof.</p>
       <p class="share-warning hidden" id="vr-package-note">Proof packages are unavailable in this browser/app mode. Save the .ots proof file instead.</p>
-      <p class="share-warning hidden" id="vr-download-warning">Warning: this ZIP contains the original file. Anyone you send the ZIP to can open the original.</p>
       <a class="download solid hidden" id="vr-upgraded-link">Save proof package (.zip, includes original file)</a>
+      <p class="share-warning hidden" id="vr-download-warning">Warning: this ZIP contains the original file. Anyone you send the ZIP to can open the original.</p>
     </div>
   </div>
 

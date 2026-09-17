@@ -51,9 +51,10 @@ Verify this package:
     ots verify -f "${opts.originalName}" "${opts.otsFileName}"
 - or upload the .ots file and the original at https://opentimestamps.org
 
-This proof demonstrates that the file existed at the anchored point in time,
-without trusting anyone: the SHA-256 hash of the file is committed to a
-Bitcoin block via OpenTimestamps.
+This proof demonstrates that the file existed at the anchored point in time:
+the SHA-256 hash of the file is included in a commitment anchored to a Bitcoin
+block via OpenTimestamps. The proof can be verified independently with
+compatible OpenTimestamps software.
 `;
 }
 
@@ -489,8 +490,8 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
         verdict = 'pending';
         setResultState('pending');
         vstatus.el.appendChild(makeVerdictBanner('pending', '–', 'Initial proof – not yet anchored in Bitcoin', [
-          'This is normal for a new proof, not an error. The hash and the .ots file match; OpenTimestamps has your hash, but it has not been written into a Bitcoin block yet.',
-          'Bitcoin anchoring usually completes within 1–6 hours – come back later and verify again.',
+          'This is normal for a new proof, not an error. The hash and the .ots file match; OpenTimestamps has your hash, but the commitment containing it has not been anchored to Bitcoin yet.',
+          'Bitcoin anchoring has not completed yet – come back later and verify again.',
         ]));
       }
 

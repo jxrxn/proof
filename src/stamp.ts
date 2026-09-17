@@ -22,6 +22,10 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
   let currentProofUrl: string | null = null;
   let currentPackageUrl: string | null = null;
   let currentHashAbort: AbortController | null = null;
+  // Vi kan bara veta att en nedladdning INITIERADES, inte att filen faktiskt
+  // sparades någonstans. Flaggan används därför bara för att avgöra om vi ska
+  // varna innan resultatet kastas - aldrig för att påstå att beviset är sparat.
+  let proofDownloadStarted = false;
 
   const tabs            = document.querySelectorAll<HTMLButtonElement>('.tab');
   const filePanel       = byId('file-panel');
@@ -41,6 +45,10 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
   const resultContent   = byId('result-content');
   const resultEmpty     = byId('result-empty');
   const cancelBtn       = byId('stamp-operation-cancel', HTMLButtonElement);
+  const newProofBtn     = byId('new-proof', HTMLButtonElement);
+  const newProofConfirm = byId('new-proof-confirm');
+  const keepProofBtn    = byId('keep-proof', HTMLButtonElement);
+  const discardProofBtn = byId('discard-proof', HTMLButtonElement);
 
   const status = createStatusList(byId('status-list'), 's-');
   const operationUi = createOperationUi('stamp');
@@ -118,6 +126,11 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
 
   function resetAll() {
     resetPanel();
+    // Hör till det föregående beviset och får inte överleva en reset.
+    proofDownloadStarted = false;
+    newProofConfirm.classList.add('hidden');
+    // Den expanderade förklaringen ska inte ligga kvar öppen för nästa bevis.
+    resultContent.querySelector('details')?.removeAttribute('open');
   }
 
   tabs.forEach(tab => {
@@ -189,6 +202,9 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
     operationUi.reset();
     // En controller för HELA operationen (hash → stamp → paket), inte bara
     // hashningen: ny input eller cancel avbryter vid nästa checkpoint.
+    // Nytt bevis: föregående nedladdningsstatus gäller inte längre.
+    proofDownloadStarted = false;
+    newProofConfirm.classList.add('hidden');
     currentHashAbort = new AbortController();
     const opSignal = currentHashAbort.signal;
 
@@ -260,7 +276,7 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
       );
       throwIfSignalAborted(opSignal);
       const otsBytes = detached.serializeToBytes();
-      status.set('ots', 'Hash submitted to OpenTimestamps. You now have an initial proof (.ots) – Bitcoin anchoring usually completes within 1–6 hours.', 'ok');
+      status.set('ots', 'Hash submitted to OpenTimestamps. You now have an initial proof (.ots) – Bitcoin anchoring completes later.', 'ok');
 
       // Enhetlig namngivning: samma tidsstämpel i ZIP-paketet, i det initiala
       // beviset och (senare) i OpenTimestamps-beviset, så användaren direkt ser
@@ -275,8 +291,9 @@ Created:    ${iso}
 Algorithm:  SHA-256
 Status:     Initial proof – NOT yet anchored to Bitcoin.
             This .ots file does not yet contain Bitcoin verification data.
-            Bitcoin anchoring usually completes within 1-6 hours, after which
-            the initial proof becomes a full OpenTimestamps proof (see below).
+            Once the commitment containing your hash has been anchored to
+            Bitcoin, this initial proof can be completed into a full
+            OpenTimestamps proof (see below).
 
 SHA-256 hash:
 ${hashHex}
@@ -294,7 +311,7 @@ Verify SHA-256 (Windows PowerShell):
 
 Turn the initial proof into an OpenTimestamps proof (requires opentimestamps-client):
   pip install opentimestamps-client
-  ots upgrade "${initialProofName}"   # wait 1-6 hours for Bitcoin anchoring first
+  ots upgrade "${initialProofName}"   # run once Bitcoin anchoring has completed
   ots verify -f "${originalName}" "${initialProofName}"
   # then keep it as ${folderName}_opentimestamps.ots
 
@@ -307,12 +324,17 @@ How this proof works (4 stages):
 2. Hash submitted to OpenTimestamps - only the hash was sent. In return you got
    this .ots file. Right now it is an INITIAL PROOF: it does not yet contain
    Bitcoin verification data.
-3. Bitcoin anchoring (usually 1-6 hours) - OpenTimestamps commits your hash to
-   the Bitcoin blockchain (it is written into a Bitcoin transaction).
-4. OpenTimestamps proof - after anchoring, "ots upgrade" adds the Bitcoin
-   verification data to the file, turning the initial proof into a full
-   OpenTimestamps proof that anyone can verify against the Bitcoin blockchain,
-   without trusting you, me, or OpenTimestamps.
+3. Bitcoin anchoring - OpenTimestamps combines many submitted hashes into a
+   shared cryptographic commitment, and that commitment is anchored to the
+   Bitcoin blockchain. Your individual hash is not written to Bitcoin on its
+   own. This .ots file contains the cryptographic path needed to prove that
+   your hash was included in the commitment that was anchored.
+4. OpenTimestamps proof - once the commitment has been anchored, "ots upgrade"
+   completes this file with the Bitcoin verification data, turning the initial
+   proof into a full OpenTimestamps proof. Anyone can then verify it against
+   the Bitcoin blockchain without trusting you, me, or OpenTimestamps, using
+   any compatible OpenTimestamps software. The app that created this package
+   does not need to exist for the proof to be verifiable.
 `;
 
       const proofBytes = new Uint8Array(otsBytes.length);
@@ -398,10 +420,29 @@ How this proof works (4 stages):
     }
   });
 
-  downloadLink.addEventListener('click', () => {
-    setTimeout(() => {
-      if (confirm('Start fresh with a new proof?')) resetAll();
-    }, 400);
+  // Båda nedladdningarna räknas. Vi registrerar att användaren startade en
+  // nedladdning - webbläsaren kan inte tala om för oss om filen faktiskt
+  // hamnade någonstans, så flaggan styr bara om vi varnar vid reset.
+  for (const link of [proofLink, downloadLink]) {
+    link.addEventListener('click', () => { proofDownloadStarted = true; });
+  }
+
+  newProofBtn.addEventListener('click', () => {
+    if (proofDownloadStarted) {
+      resetAll();
+      return;
+    }
+    newProofConfirm.classList.remove('hidden');
+    keepProofBtn.focus();
+  });
+
+  keepProofBtn.addEventListener('click', () => {
+    newProofConfirm.classList.add('hidden');
+    newProofBtn.focus();
+  });
+
+  discardProofBtn.addEventListener('click', () => {
+    resetAll();
   });
 
   return { resetPanel, refreshPackageCapability };
