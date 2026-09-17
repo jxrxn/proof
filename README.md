@@ -142,9 +142,18 @@ Det här är ett sekundärt verify-flöde.
   Ett CDN-anrop hade brutit både `file://`-körning och löftet att appen inte
   pratar med någon utomstående. `build.assetsInlineLimit` är höjd så att Vite
   bakar in dem som data-URI:er — annars hade de emitterats som separata assets
-  och bygget vore inte längre en enda fil. Endast latin-subseten ingår (47 + 21 kB);
-  alla subsets hade kostat 213 kB för Inter ensamt. Uppdateras från
+  och bygget vore inte längre en enda fil. Uppdateras från
   `@fontsource-variable/inter` och `@fontsource/jetbrains-mono`, båda v5.3.0, OFL.
+- Av Inter ingår subseten latin, latin-ext och vietnamesiska (47 + 83 + 10 kB).
+  De två senare är inte valfria: utan dem täcker Inter latinska språk bara
+  delvis, och polska `Zażółć` renderas med blandade typsnitt inuti samma ord.
+  Grekiska och kyrilliska är medvetet uteslutna (73 kB) — de faller tillbaka
+  enhetligt på systemfonten, vilket bara ser annorlunda ut, inte trasigt.
+  Skript som Inter helt saknar (CJK, arabiska, hebreiska, thai, devanagari)
+  faller alltid tillbaka, oavsett subsets.
+- `unicode-range` i `@font-face` är nödvändig, inte en optimering: flera
+  `@font-face` för samma familj utan intervall gör att bara den sist
+  deklarerade används.
 - Worker-spåret bundlas via Vites `?worker&inline` från den typade
   `src/workers/hash.worker.ts` — samma kod som unit-testas — och startas som
   Blob-worker, vilket bevarar single-file-distributionen från `file://`.
