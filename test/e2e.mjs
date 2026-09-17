@@ -87,15 +87,19 @@ try {
 
   const initialCopy = await page.evaluate(() => ({
     createHelper: document.querySelector('#stamp-input-card .helper-text')?.textContent || '',
+    createCapability: document.getElementById('package-capability-copy')?.textContent || '',
     verifyHelper: document.querySelector('#verify-input-card .helper-text')?.textContent || '',
     activeVerifyTab: document.querySelector('.vtab.active')?.getAttribute('data-vtab'),
     primaryModeNote: document.querySelector('#vseparate-panel .mode-note')?.textContent || '',
     zipModeNote: document.querySelector('#vzip-panel .mode-note')?.textContent || '',
   }));
-  check(squish(initialCopy.createHelper).includes('Large files are supported when saving a proof file (.ots).'),
+  check(squish(initialCopy.createHelper).includes('Only the hash is submitted to OpenTimestamps.'),
+        'create copy states that only the hash is submitted');
+  check(squish(initialCopy.createCapability).includes('Optional: save a proof package (.zip)')
+        && squish(initialCopy.createCapability).includes('limited to 100 MB'),
+        'create copy presents proof packages as optional and limited');
+  check(squish(initialCopy.createCapability).includes('saving the .ots proof itself supports larger files'),
         'create copy presents .ots as the large-file-safe default');
-  check(squish(initialCopy.createHelper).includes('Proof packages include the original file and are currently limited to 100 MB.'),
-        'create copy presents proof packages as limited and secondary');
   check(squish(initialCopy.verifyHelper).includes('For large files, use the original file and its .ots proof.'),
         'verify copy recommends original file + .ots for large files');
   check(squish(initialCopy.verifyHelper).includes('Proof package verification is currently limited to 100 MB.'),

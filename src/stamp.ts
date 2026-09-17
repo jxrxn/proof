@@ -52,7 +52,9 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
   function applyPackageCapabilityCopy(): void {
     if (packageCapability.supported) {
       packageCapabilityCopy.textContent =
-        `Optional secondary download: proof package (.zip, includes original file) for files up to ${Math.round(packageCapability.maxBytes / 1048576)} MB in this browser.`;
+        'Optional: save a proof package (.zip) containing both the original file and its proof. ' +
+        `Proof packages are limited to ${Math.round(packageCapability.maxBytes / 1048576)} MB in this browser; ` +
+        'saving the .ots proof itself supports larger files.';
       packageModeEl.textContent =
         'Optional secondary download: proof package (.zip, includes original file)';
       return;

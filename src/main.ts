@@ -22,6 +22,21 @@ if (brandMarkEl) {
   brandMarkEl.innerHTML = brandMark;
 }
 
+// Info-panelen stängs genom att klicka var som helst utanför den, inte bara
+// på i-knappen. <details> gör inte detta själv. Klick inuti panelen räknas som
+// innanför, så länkar i texten fungerar som vanligt.
+const infoDetails = document.querySelector<HTMLDetailsElement>('.footer-info');
+if (infoDetails) {
+  document.addEventListener('click', e => {
+    if (infoDetails.open && !infoDetails.contains(e.target as Node)) {
+      infoDetails.open = false;
+    }
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && infoDetails.open) infoDetails.open = false;
+  });
+}
+
 // Ny input på ena sidan nollställer den andra, så att kortens innehåll aldrig
 // visar resultat som hör till en tidigare fil/text.
 let verifyPanel: VerifyPanel | undefined;

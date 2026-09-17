@@ -29,9 +29,7 @@
         <button class="tab" data-tab="text">Text</button>
       </div>
       <div class="helper-text">
-        Create a proof from a file or a short piece of text. Only a SHA-256 digest is submitted – your file or text never leaves your device.
-        Large files are supported when saving a proof file (.ots).
-        Proof packages include the original file and are currently limited to 100&nbsp;MB.
+        Create a proof from a file or a short piece of text. A SHA-256 hash is created locally – your file or text never leaves your device. Only the hash is submitted to OpenTimestamps. Save the resulting .ots proof file for independent verification later.
       </div>
       <div class="mode-note" id="package-capability-copy"></div>
 
@@ -174,9 +172,9 @@
   <details class="footer-info">
     <summary><span class="info-badge">i</span></summary>
     <div class="footer-panel">
-      <p>Timestamp any text or file. This app creates a SHA-256 hash on your device and submits only that hash to OpenTimestamps. OpenTimestamps then anchors it to the Bitcoin blockchain, usually within 1–6 hours.</p>
-      <p>Your original file or text is not uploaded. Only the cryptographic hash is submitted for timestamping, and a hash cannot be reversed to reveal the original contents.</p>
-      <p>Right after creation you hold an initial proof, which does not yet contain Bitcoin verification data. Once Bitcoin anchoring completes it becomes a full OpenTimestamps proof that can be independently verified – demonstrating that the file or text existed at that point in time, while preserving privacy. Save your proof so you can do this later.</p>
+      <p>Proof creates a SHA-256 hash of your text or file on your device. Only this hash is submitted to OpenTimestamps – your original content is never sent.</p>
+      <p>OpenTimestamps combines many submitted hashes into a shared cryptographic commitment, which is later anchored to the Bitcoin blockchain. Your .ots file contains the information needed to connect your hash to that timestamp.</p>
+      <p>Keep the original file or text together with its .ots file. Once the Bitcoin timestamp has been established, the proof can be independently verified at any later time. You do not need this app to verify it. The .ots file uses the open OpenTimestamps protocol and can be verified with compatible OpenTimestamps software.</p>
       <p>Using this app is free. OpenTimestamps calendar servers are free to use and rely on donations. Learn more at <a href="https://opentimestamps.org/" target="_blank" rel="noopener noreferrer">opentimestamps.org</a>.</p>
     </div>
   </details>

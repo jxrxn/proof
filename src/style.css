@@ -25,6 +25,13 @@
 
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Reserverad höjd för formytan i de två övre korten. Måste rymma det högsta
+     läget, Text + OTS: textarea (108px) + etikett + kompakt dropzone (60px),
+     totalt ca 195px. Verify-lägena är annars 129-195px och skulle flytta
+     knappen 66px när man växlar. Samma värde i båda korten gör att formytorna
+     börjar på samma höjd i vänster och höger kolumn. */
+  --form-area: 14rem;
 }
 
 /* ── Typsnitt ──
@@ -232,6 +239,27 @@ html, body {
   flex-direction: column;
   gap: 12px;
   margin-bottom: 10px;
+  /* Fyller kortet, så att formytan nedan har ledig yta att förankras mot. */
+  flex: 1;
+}
+
+/* Formytan förankras mot kortets nederkant i stället för att följa direkt på
+   den varierande brödtexten. margin-top:auto lägger all överbliven luft mellan
+   instruktionstexten och formen, och justify-content:flex-end håller
+   innehållet mot underkanten av den reserverade ytan. Dropzonerna behåller sin
+   egen höjd - ytan fylls med luft, inte med högre dropzones.
+   Bara ett av panelerna är synligt i taget (övriga är display:none), så exakt
+   en av dem absorberar den lediga ytan. */
+#file-panel,
+#text-panel,
+#vzip-panel,
+#vseparate-panel,
+#vtext-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: var(--form-area);
+  margin-top: auto;
 }
 .mode-note,
 .helper-note {
@@ -314,7 +342,18 @@ button.secondary:disabled {
 .tabs { display: flex; gap: 6px; margin-bottom: 13px; }
 .tab, .vtab {
   flex: 1;
-  padding: 7px 4px;
+  /* Reservera alltid plats för två rader. Utan detta blir verify-kolumnens
+     flikar 44 px när deras längre etiketter bryter medan stamp-kolumnens
+     stannar på 30, och kolumnerna hamnar i otakt. Texten centreras i stället
+     för att hänga kvar upptill när den bara tar en rad.
+     2 rader (2 x 1.3em) + vertikal padding (14px) + kantlinje (2px). */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.3;
+  min-height: calc(2.6em + 16px);
+  padding: 7px 6px;
   background: rgba(255, 255, 255, 0.04);
   border-radius: 7px;
   color: var(--muted);
@@ -455,13 +494,6 @@ summary:focus-visible {
   line-height: 1.5;
 }
 
-#file-panel,
-#text-panel,
-#vzip-panel,
-#vtext-panel {
-  min-height: 108px;
-}
-
 #text-panel textarea,
 #vtext-panel textarea {
   height: 108px;
@@ -600,6 +632,8 @@ details a { color: var(--blue); }
 
 .app-footer {
   padding: 0 20px 28px;
+  /* Containing block för panelen nedan, som fälls ut uppåt. */
+  position: relative;
 }
 
 .footer-info {
@@ -635,10 +669,19 @@ details a { color: var(--blue); }
 }
 
 .footer-panel {
-  margin-top: 10px;
+  /* Fälls ut uppåt i stället för nedåt: footern ligger sist på sidan, så en
+     panel som växer nedåt hamnar utanför vyn. bottom: 100% lägger den ovanför
+     footerns överkant, och left/right följer footerns sidopadding så att
+     bredden blir densamma som tidigare. */
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: calc(100% + 10px);
+  z-index: 20;
+  /* Panelen ligger nu över sidans innehåll och måste vara ogenomskinlig. */
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.03);
   padding: 16px 18px;
   color: var(--muted);
   line-height: 1.6;
@@ -656,6 +699,7 @@ details a { color: var(--blue); }
 @media (max-width: 720px) {
   .app-body { grid-template-columns: 1fr; padding: 12px 14px 28px; }
   .app-footer { padding: 0 14px 28px; }
+  .footer-panel { left: 14px; right: 14px; }
   #stamp-input-card  { order: 1; }
   #result-card       { order: 2; }
   #verify-input-card { order: 3; }
