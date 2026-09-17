@@ -1,6 +1,7 @@
 import './style.css';
 import { hashBlobInWorker } from './lib/hashWorkerClient';
 import type { PackageCapability } from './lib/packageCapability';
+import { TEST_HOOKS_ENABLED } from './lib/testHooks';
 import { createOperationUi, type OperationState } from './lib/operationUi';
 import { initStamp } from './stamp';
 import { initVerify, type VerifyPanel } from './verify';
@@ -13,7 +14,7 @@ verifyPanel = initVerify({ onInputActivity: () => stampPanel.resetPanel() });
 
 // Minimal test-hook for e2e so the real browser-bundled worker path can be
 // exercised without wiring it into the visible UI yet.
-if (import.meta.env.DEV || new URLSearchParams(window.location.search).has('__e2e')) {
+if (TEST_HOOKS_ENABLED) {
   const stampOperationUi = createOperationUi('stamp');
   const verifyOperationUi = createOperationUi('verify');
   const debugState = {

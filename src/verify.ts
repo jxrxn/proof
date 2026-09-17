@@ -11,6 +11,7 @@ import {
 import { getOts, opentimestampsProofName, detachedFromHashHex } from './lib/ots';
 import { isAbortError, throwIfSignalAborted } from './lib/hashShared';
 import { buildProofZip } from './lib/proofPackage';
+import { getProofDebugState } from './lib/testHooks';
 
 // README för det ompaketerade beviset som kan sparas efter en verifiering.
 function verifiedReadme(opts: {
@@ -104,11 +105,7 @@ function classifyVerifyFile(file: File): VerifyFileKind {
 }
 
 function shouldForceVerifyWorkerFailure(): boolean {
-  const debugState = (window as Window & {
-    __proofDebugState?: {
-      forceVerifyHashWorkerFailureCount?: number;
-    };
-  }).__proofDebugState;
+  const debugState = getProofDebugState();
   if (!debugState || !debugState.forceVerifyHashWorkerFailureCount) {
     return false;
   }
@@ -368,9 +365,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
   }
 
   function setVerifyHashMethod(method: 'worker' | 'streaming-fallback' | null): void {
-    const debugState = (window as Window & {
-      __proofDebugState?: { lastVerifyHashMethod: 'worker' | 'streaming-fallback' | null };
-    }).__proofDebugState;
+    const debugState = getProofDebugState();
     if (debugState) {
       debugState.lastVerifyHashMethod = method;
     }

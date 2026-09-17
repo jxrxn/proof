@@ -2,7 +2,7 @@
 //   1. skapa bevis från text  →  hash + ZIP-länk
 //   2. mata tillbaka ZIP:en i verify  →  pending-utfall, knapp omkörbar
 //   3. korrupt ZIP  →  inline-fel, ingen tyst krasch
-// Kräver nätverk (OpenTimestamps-kalendrarna). Kör: npm run build && npm run e2e
+// Kräver nätverk (OpenTimestamps-kalendrarna). Kör: npm run e2e
 // Chrome-sökväg kan överridas med env CHROME.
 
 import puppeteer from 'puppeteer-core';
@@ -12,7 +12,7 @@ import { readFileSync } from 'node:fs';
 import JSZip from 'jszip';
 
 const dist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../dist/index.html');
-const APP = 'file://' + dist + '?__e2e=1';
+const APP = 'file://' + dist;
 const CHROME = process.env.CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const fixtureDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'fixtures');
 const origB64 = readFileSync(path.join(fixtureDir, 'hello-world.txt')).toString('base64');

@@ -24,7 +24,7 @@ npm install
 npm run dev        # dev-server med hot reload
 npm run build      # typkoll + bygge → dist/index.html
 npm run test:unit  # unit-tester för lågnivåmoduler
-npm run e2e        # end-to-end-röktest i Chrome mot dist/ (kräver nätverk)
+npm run e2e        # bygger testvariant + kör end-to-end-röktest i Chrome (kräver nätverk)
 ```
 
 Bygget producerar **en enda HTML-fil** (`dist/index.html`) med all JS/CSS

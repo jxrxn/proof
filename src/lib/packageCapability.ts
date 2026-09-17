@@ -1,4 +1,5 @@
 import { MAX_FILE_BYTES } from './util';
+import { getProofDebugState } from './testHooks';
 
 export type PackageCapability = {
   supported: boolean;
@@ -27,12 +28,7 @@ function packageSupported(): PackageCapability {
 }
 
 function getCapabilityOverride(): PackageCapabilityOverride {
-  const debugState = (window as Window & {
-    __proofDebugState?: {
-      packageCapabilityOverride?: PackageCapabilityOverride;
-    };
-  }).__proofDebugState;
-  return debugState?.packageCapabilityOverride;
+  return getProofDebugState()?.packageCapabilityOverride;
 }
 
 export function detectPackageCapability(): PackageCapability {
