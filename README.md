@@ -27,8 +27,15 @@ npm run test:unit  # unit-tester för lågnivåmoduler
 npm run e2e        # bygger testvariant + kör end-to-end-röktest i Chrome (kräver nätverk)
 ```
 
-Bygget producerar **en enda HTML-fil** (`dist/index.html`) med all JS/CSS
-inbakad. Ingen separat worker-fil, `.wasm`-fil eller CDN-resurs krävs.
+Själva appen är **en enda självbärande HTML-fil** (`dist/index.html`) med all
+JS, CSS och alla typsnitt inbakade. Ingen separat worker-fil, `.wasm`-fil
+eller CDN-resurs krävs, och filen kan köras direkt från `file://`.
+
+Bredvid den emitteras ikoner, `manifest.webmanifest` och OG-bilden som egna
+filer. De behövs bara vid webbhosting — ett PWA-manifest måste vara en egen
+fil för att vara installerbart, Safari hämtar apple-touch-icon som URL, och
+OG-bilder läses av externa skrapare som kräver absolut URL. Kopierar man bara
+`index.html` fungerar appen fullt ut; ikonlänkarna 404:ar oskadligt.
 
 ## Användning
 
@@ -131,6 +138,7 @@ Det här är ett sekundärt verify-flöde.
 - `src/vendor/opentimestamps.min.js` — vendrad OpenTimestamps-bundle v0.4.9
 - `OTS-BUNDLE.md` — analys av den vendrade bundlens storlek och beroenden
 - `src/fonts/` — vendrade latin-subsets av Inter och JetBrains Mono (woff2)
+- `src/icons/` — favicon, PWA-ikoner, OG-bild och deras metadata (`icons.ts`)
 - `test/fixtures/` — officiellt hello-world-exempel för VERIFIED-flödet
 - `legacy/proof.html` — gammal arkiverad version; använd inte den som app
 
@@ -165,6 +173,19 @@ Det här är ett sekundärt verify-flöde.
 - `unicode-range` i `@font-face` är nödvändig, inte en optimering: flera
   `@font-face` för samma familj utan intervall gör att bara den sist
   deklarerade används.
+- Ikoner, manifest och OG-bild content-hashas av `emitIcons()` i
+  `vite.config.ts` (`favicon.<hash>.svg`) och fungerar därmed som
+  cache-buster. Webbläsare cachar favicons aggressivt och sociala skrapare
+  cachar OG-bilder på URL — med hash i namnet blir en ändrad ikon en ny URL
+  som gammal cache inte kan träffa. Manifestet genereras vid bygge i stället
+  för att ligga statiskt, eftersom det måste peka på de hashade ikonnamnen.
+  Hashen kaskaderar: ändrad ikon ger nytt manifest som ger ny länk i HTML:en.
+- JS och CSS har däremot inga versionerade filnamn, och kan inte ha det — de
+  finns inte som filer utan är inbakade i `index.html`. Den filens färskhet
+  är en `Cache-Control`-fråga hos webbhotellet, inte en filnamnsfråga.
+- `base` är `'./'`, inte `'/proof/'`. GitHub Pages ligger på en underväg, men
+  en absolut base hade brutit `file://`-körningen. Relativa vägar fungerar i
+  båda fallen. Sajt-URL:en för OG-taggarna står i `src/icons/icons.ts`.
 - Worker-spåret bundlas via Vites `?worker&inline` från den typade
   `src/workers/hash.worker.ts` — samma kod som unit-testas — och startas som
   Blob-worker, vilket bevarar single-file-distributionen från `file://`.
