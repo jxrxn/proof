@@ -258,6 +258,9 @@ html, body {
   /* Fyller kortet, så att formytan nedan har ledig yta att förankras mot. */
   flex: 1;
 }
+.verify-proof .input-card-main {
+  min-height: calc(216px + 12px + 2.25rem);
+}
 
 
 /* Formytan förankras mot kortets nederkant i stället för att följa direkt på
@@ -277,6 +280,42 @@ html, body {
   justify-content: flex-end;
   min-height: var(--form-area);
   margin-top: auto;
+}
+#verify-input-card #vzip-panel,
+#verify-input-card #vseparate-panel,
+#verify-input-card #vtext-panel {
+  min-height: calc(216px + 12px + 2.25rem);
+}
+#stamp-input-card #file-panel .drop,
+#stamp-input-card #text-panel textarea {
+  height: 108px;
+  min-height: 108px;
+  box-sizing: border-box;
+}
+.verify-fields {
+  display: grid;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  height: auto;
+  min-height: var(--form-area);
+}
+.verify-field {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
+.verify-field .drop {
+  height: 108px;
+  min-height: 108px;
+  flex: none;
+}
+.verify-field .drop-label {
+  margin: 0 0 3px 2px;
+}
+#vzip-panel > .drop {
+  height: 108px;
+  min-height: 108px;
+  box-sizing: border-box;
 }
 .mode-note,
 .helper-note {
@@ -428,8 +467,8 @@ button.secondary:disabled {
     rgba(46, 46, 51, 0.15) 24px
   );
 }
-#stamp-input-card .drop::before { background: repeating-linear-gradient(135deg, transparent, transparent 6px, rgba(136, 199, 255, 0.15) 6px, rgba(136, 199, 255, 0.15) 12px); }
-#verify-input-card .drop::before { background: repeating-linear-gradient(135deg, transparent, transparent 6px, rgba(255, 184, 77, 0.15) 6px, rgba(255, 184, 77, 0.15) 12px); }
+#stamp-input-card .drop::before { background: repeating-linear-gradient(135deg, transparent, transparent 12px, rgba(136, 199, 255, 0.15) 12px, rgba(136, 199, 255, 0.15) 24px); }
+#verify-input-card .drop::before { background: repeating-linear-gradient(135deg, transparent, transparent 12px, rgba(255, 184, 77, 0.15) 12px, rgba(255, 184, 77, 0.15) 24px); }
 .drop.compact { min-height: 60px; padding: 10px 14px; }
 .drop p { margin: 2px 0; }
 .drop strong { color: var(--text); }

@@ -73,25 +73,32 @@
       </div>
 
       <div id="vseparate-panel">
-        <div class="drop-label">Original file</div>
-        <input type="file" id="vorig-input">
-        <label for="vorig-input" class="drop compact" id="vorig-drop">
-          <p id="vorig-name">Click or drag the original file here</p>
-        </label>
-        <div class="drop-label">Proof file (.ots)</div>
-        <input type="file" id="vots-input" accept=".ots">
-        <label for="vots-input" class="drop compact" id="vots-drop">
-          <p id="vots-name">Click or drag the .ots file here</p>
-        </label>
+        <div class="verify-fields">
+          <div class="verify-field">
+            <div class="drop-label">Original file</div>
+            <input type="file" id="vorig-input">
+            <label for="vorig-input" class="drop compact" id="vorig-drop"><p id="vorig-name">Click or drag the original file here</p></label>
+          </div>
+          <div class="verify-field">
+            <div class="drop-label">Proof file (.ots)</div>
+            <input type="file" id="vots-input" accept=".ots">
+            <label for="vots-input" class="drop compact" id="vots-drop"><p id="vots-name">Click or drag the .ots file here</p></label>
+          </div>
+        </div>
       </div>
 
       <div id="vtext-panel" class="hidden">
-        <textarea id="vtext-input" placeholder="Paste the original text here…"></textarea>
-        <div class="drop-label">Proof file (.ots)</div>
-        <input type="file" id="vots-text-input" accept=".ots">
-        <label for="vots-text-input" class="drop compact" id="vots-text-drop">
-          <p id="vots-text-name">Click or drag the .ots file here</p>
-        </label>
+        <div class="verify-fields">
+          <div class="verify-field">
+            <div class="drop-label">Text</div>
+            <textarea id="vtext-input" placeholder="Paste the original text here…"></textarea>
+          </div>
+          <div class="verify-field">
+            <div class="drop-label">Proof file (.ots)</div>
+            <input type="file" id="vots-text-input" accept=".ots">
+            <label for="vots-text-input" class="drop compact" id="vots-text-drop"><p id="vots-text-name">Click or drag the .ots file here</p></label>
+          </div>
+        </div>
       </div>
     </div>
 

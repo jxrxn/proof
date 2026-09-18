@@ -265,7 +265,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     vseparatePanel.classList.toggle('hidden', mode !== 'vseparate');
     vtextPanel.classList.toggle('hidden',     mode !== 'vtext');
     verifyModeDescription.textContent = mode === 'vzip'
-      ? 'Verify a proof package containing the original file and its proof. Maximum package size: 100 MB.'
+      ? 'Verify a proof package · maximum size: 100 MB.'
       : mode === 'vtext'
         ? 'Verify text against its OpenTimestamps proof.'
         : 'Verify an original file against its OpenTimestamps proof.';
