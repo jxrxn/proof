@@ -4,7 +4,7 @@
   --surface2:       #222226;
   --border:         #2e2e33;
   --text:           #e8e8ed;
-  --muted:          #8e8e93;
+  --muted:          #a1a1a8;
   --blue:           #4d9fe8;
   --blue-soft:      #10263d;
   --blue-soft-line: #294d72;
@@ -371,12 +371,17 @@ button.secondary:disabled {
   font-family: inherit;
   transition: all 0.12s;
 }
+/* Mörk text på de fyllda flikarna, inte vit. --blue och --orange är ljusa
+   accenter: vitt mot dem ger 2,8:1 respektive 3,3:1, under WCAG AA:s 4,5:1.
+   Bakgrundsfärgen som textfärg ger 6,9:1 och 5,9:1 och låter accenterna vara
+   kvar exakt som de är – att mörka ned själva accenten hade slagit igenom på
+   allt annat de används till. */
 .tab { border: 1px solid var(--blue-deep); }
 .vtab { border: 1px solid var(--orange-deep); }
 .tab:hover { color: var(--text); border-color: var(--blue-light); }
 .vtab:hover { color: var(--text); border-color: var(--orange-light); }
-.tab.active  { background: var(--blue);   color: #fff; border-color: var(--blue-light); }
-.vtab.active { background: var(--orange); color: #fff; border-color: var(--orange-light); }
+.tab.active  { background: var(--blue);   color: var(--bg); border-color: var(--blue-light); }
+.vtab.active { background: var(--orange); color: var(--bg); border-color: var(--orange-light); }
 
 /* ── Drop zone ── */
 .drop {
@@ -592,7 +597,7 @@ button.primary.verify-btn:disabled { background: #2c2c30; border-color: var(--or
   transition: background 0.12s;
 }
 .download:hover { background: #14311f; }
-.download.solid { background: var(--green); border-color: var(--green-light); color: #fff; }
+.download.solid { background: var(--green); border-color: var(--green-light); color: var(--bg); }
 .download.solid:hover { background: #3ca268; }
 
 /* ── Hash display ── */

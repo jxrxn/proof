@@ -128,10 +128,15 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
     resultContent.querySelector('details')?.removeAttribute('open');
   }
 
+  // aria-pressed speglar .active. Utan den finns valt läge bara som färg, och
+  // den som inte ser färgen får två knappar utan skillnad.
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
-      tabs.forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
+      tabs.forEach(t => {
+        const on = t === tab;
+        t.classList.toggle('active', on);
+        t.setAttribute('aria-pressed', String(on));
+      });
       mode = tab.dataset.tab === 'text' ? 'text' : 'file';
       filePanel.classList.toggle('hidden', mode !== 'file');
       textPanel.classList.toggle('hidden', mode !== 'text');

@@ -18,15 +18,15 @@
   </p>
 </header>
 
-<div class="app-body">
+<main class="app-body">
 
   <!-- ── Stamp input ── -->
   <div class="card input-card create-proof" id="stamp-input-card">
-    <div class="card-title">Create proof</div>
+    <h2 class="card-title">Create proof</h2>
     <div class="input-card-main">
-      <div class="tabs">
-        <button class="tab active" data-tab="file">File</button>
-        <button class="tab" data-tab="text">Text</button>
+      <div class="tabs" role="group" aria-label="Proof input type">
+        <button class="tab active" type="button" aria-pressed="true" data-tab="file">File</button>
+        <button class="tab" type="button" aria-pressed="false" data-tab="text">Text</button>
       </div>
       <div class="helper-text">
         Create a proof from a file or a short piece of text. A SHA-256 hash is created locally – your file or text never leaves your device. Only the hash is submitted to OpenTimestamps. Save the resulting .ots proof file for independent verification later.
@@ -57,12 +57,12 @@
 
   <!-- ── Verify input ── -->
   <div class="card input-card verify-proof" id="verify-input-card">
-    <div class="card-title">Verify proof</div>
+    <h2 class="card-title">Verify proof</h2>
     <div class="input-card-main">
-      <div class="tabs">
-        <button class="vtab active" data-vtab="vseparate">Verify original file + .ots</button>
-        <button class="vtab" data-vtab="vzip">Verify proof package (.zip)</button>
-        <button class="vtab" data-vtab="vtext">Text + OTS</button>
+      <div class="tabs" role="group" aria-label="Verification input type">
+        <button class="vtab active" type="button" aria-pressed="true" data-vtab="vseparate">Verify original file + .ots</button>
+        <button class="vtab" type="button" aria-pressed="false" data-vtab="vzip">Verify proof package (.zip)</button>
+        <button class="vtab" type="button" aria-pressed="false" data-vtab="vtext">Text + OTS</button>
       </div>
       <div class="helper-text">
         For large files, use the original file and its .ots proof.
@@ -115,7 +115,7 @@
 
   <!-- ── Stamp result ── -->
   <div class="card proof" id="result-card">
-    <div class="card-title">Created proof</div>
+    <h2 class="card-title">Created proof</h2>
     <div id="result-empty" class="empty-state">Create a proof to see its hash and save the proof file (.ots) here.</div>
     <div id="result-content" class="hidden">
       <div class="result-title">Initial proof created</div>
@@ -155,7 +155,7 @@
 
   <!-- ── Verify result ── -->
   <div class="card verification-result" id="verify-result-card">
-    <div class="card-title">Verification result</div>
+    <h2 class="card-title">Verification result</h2>
     <div id="verify-result-empty" class="empty-state">Verify a proof to see the result here.</div>
     <div id="verify-result-content" class="hidden">
       <div class="result-label">SHA-256 (created locally from your file)</div>
@@ -171,11 +171,11 @@
     </div>
   </div>
 
-</div><!-- /app-body -->
+</main><!-- /app-body -->
 
 <footer class="app-footer">
   <details class="footer-info">
-    <summary><span class="info-badge">i</span></summary>
+    <summary aria-label="About Proof"><span class="info-badge" aria-hidden="true">i</span></summary>
     <div class="footer-panel">
       <p>Proof creates a SHA-256 hash of your text or file on your device. Only this hash is submitted to OpenTimestamps – your original content is never sent.</p>
       <p>OpenTimestamps combines many submitted hashes into a shared cryptographic commitment, which is later anchored to the Bitcoin blockchain. Your .ots file contains the information needed to connect your hash to that timestamp.</p>

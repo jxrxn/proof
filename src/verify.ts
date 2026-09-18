@@ -246,8 +246,11 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
 
   function selectVerifyMode(mode: VMode): void {
     vMode = mode;
+    // aria-pressed speglar .active – se kommentaren i stamp.ts.
     vtabs.forEach(tab => {
-      tab.classList.toggle('active', tab.dataset.vtab === mode);
+      const on = tab.dataset.vtab === mode;
+      tab.classList.toggle('active', on);
+      tab.setAttribute('aria-pressed', String(on));
     });
     vzipPanel.classList.toggle('hidden',      mode !== 'vzip');
     vseparatePanel.classList.toggle('hidden', mode !== 'vseparate');
