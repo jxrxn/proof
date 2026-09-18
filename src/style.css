@@ -54,7 +54,15 @@
    samma ord: latin-ext behövs för polska "Zażółć", greek-ext för polytonisk
    grekiska, cyrillic-ext för kyrilliska minoritetsspråk. Skript som Inter
    helt saknar (CJK, arabiska, hebreiska, thai, devanagari) faller tillbaka
-   enhetligt på systemfonten – annorlunda utseende, men aldrig blandat. */
+   enhetligt på systemfonten – annorlunda utseende, men aldrig blandat.
+
+   Observera att intervallen inte sparar någonting så länge filerna är
+   data-URI:er: unicode-range skjuter bara upp en NÄTVERKSHÄMTNING, och någon
+   sådan finns inte när fonten redan ligger i dokumentet. Alla sju subsets
+   laddas alltså ner av varje besökare, 240 kB, varav 170 kB icke-latinskt.
+   TODO: emittera de icke-latinska som systerfiler (samma mönster som
+   emitIcons() i vite.config.ts) så att intervallen blir verksamma. Priset är
+   att file://-körning tappar de glyferna. Se PERFORMANCE.md. */
 @font-face {
   font-family: 'Inter';
   font-style: normal;

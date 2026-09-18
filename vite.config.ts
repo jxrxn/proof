@@ -10,9 +10,18 @@ import {
 // Den vendrade OpenTimestamps-bundlen är en UMD-fil. Om den dras in i
 // modulgrafen wrappar Vite chunken i en CommonJS-hjälpare, varpå UMD-wrappern
 // tar module.exports-grenen och window.OpenTimestamps aldrig sätts. Därför
-// injiceras den i stället som ett klassiskt inline-<script> före modulskriptet
-// – exakt samma semantik som den gamla CDN-taggen, och fortfarande en enda
-// självbärande HTML-fil i dist.
+// injiceras den i stället som ett klassiskt inline-<script> – exakt samma
+// semantik som den gamla CDN-taggen, och fortfarande en enda självbärande
+// HTML-fil i dist.
+//
+// Sist i <body>, inte i <head>. Bundlen är 1,6 MB och ett klassiskt skript
+// blockerar parsern där det står, så i huvudet sköt den upp allt synligt
+// innehåll tills den var nedladdad, parsad och körd – headern låg 1,6 MB in i
+// dokumentet och kunde inte målas innan dess. Sist i body når parsern markupen
+// först. Ordningen mot appen håller ändå: modulskriptet i <head> är deferrat
+// och kör efter att dokumentet parsats, alltså efter det här skriptet, så
+// getOts() i src/lib/ots.ts ser fortfarande alltid ett satt
+// window.OpenTimestamps.
 function inlineOtsVendor(): Plugin {
   const file = fileURLToPath(new URL('./src/vendor/opentimestamps.min.js', import.meta.url));
   return {
@@ -21,7 +30,7 @@ function inlineOtsVendor(): Plugin {
       return [{
         tag: 'script',
         children: readFileSync(file, 'utf8'),
-        injectTo: 'head-prepend',
+        injectTo: 'body',
       }];
     },
   };

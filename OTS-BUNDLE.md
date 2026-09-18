@@ -21,6 +21,11 @@ som den gamla CDN-taggen serverade. Den injiceras som klassiskt `<script>`
 av `inlineOtsVendor()` i `vite.config.ts`; se kommentaren där för varför den
 inte kan importeras som modul.
 
+Sedan 2026-09-18 ligger den sist i `<body>` i stället för i `<head>`, så att
+den inte längre blockerar renderingen av sidan. Det påverkar inte storleken –
+alla siffror nedan gäller fortfarande. Bundlen är 60 % av vad varje besökare
+laddar ner; se `PERFORMANCE.md` för helheten.
+
 Appen använder exakt fem ingångar ur den:
 
 | Anrop | Var |

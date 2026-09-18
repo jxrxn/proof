@@ -154,6 +154,7 @@ Det här är ett sekundärt verify-flöde.
 - `src/lib/ots.ts` – digest-only-gräns mot OpenTimestamps
 - `src/vendor/opentimestamps.min.js` – vendrad OpenTimestamps-bundle v0.4.9
 - `OTS-BUNDLE.md` – analys av den vendrade bundlens storlek och beroenden
+- `PERFORMANCE.md` – vad `dist/index.html` kostar att ladda, och vad som är kvar att göra
 - `src/fonts/` – vendrade latin-subsets av Inter och JetBrains Mono (woff2)
 - `src/icons/` – favicon, PWA-ikoner, OG-bild och deras metadata (`icons.ts`)
 - `test/fixtures/` – officiellt hello-world-exempel för VERIFIED-flödet
@@ -190,6 +191,12 @@ Det här är ett sekundärt verify-flöde.
 - `unicode-range` i `@font-face` är nödvändig, inte en optimering: flera
   `@font-face` för samma familj utan intervall gör att bara den sist
   deklarerade används.
+- Däremot ger `unicode-range` ingen storleksvinst så länge typsnitten är
+  data-URI:er. Intervallet skjuter bara upp en *nätverkshämtning*, och någon
+  sådan finns inte när filen redan ligger i dokumentet – alltså laddar varje
+  besökare ner alla sju subsets varje gång. Det är 240 kB på den kritiska
+  vägen, varav 170 kB icke-latinskt. Se `PERFORMANCE.md` för vad som skulle
+  krävas för att göra intervallen verksamma.
 - Ikoner, manifest och OG-bild content-hashas av `emitIcons()` i
   `vite.config.ts` (`favicon.<hash>.svg`) och fungerar därmed som
   cache-buster. Webbläsare cachar favicons aggressivt och sociala skrapare
