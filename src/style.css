@@ -259,6 +259,7 @@ html, body {
   flex: 1;
 }
 
+
 /* Formytan förankras mot kortets nederkant i stället för att följa direkt på
    den varierande brödtexten. margin-top:auto lägger all överbliven luft mellan
    instruktionstexten och formen, och justify-content:flex-end håller
@@ -285,6 +286,10 @@ html, body {
 }
 .mode-note {
   margin-bottom: 2px;
+}
+
+.verify-mode-description {
+  min-height: 2.9em;
 }
 .input-card > button.primary {
   margin-top: auto;

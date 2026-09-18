@@ -122,6 +122,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
   let vOtsTextFile: File | null = null;
   let verifyDone = false;
   let currentUpgradedUrl: string | null = null;
+  let currentUpgradedOtsUrl: string | null = null;
   let currentVerifyAbort: AbortController | null = null;
   let packageCapability = detectPackageCapability();
 
@@ -138,9 +139,12 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
   const vrUpgradedLink    = byId('vr-upgraded-link', HTMLAnchorElement);
   const vrDownloadWarning = byId('vr-download-warning');
   const vrPackageSection = byId('vr-package-section');
+  const vrOtsSection      = byId('vr-ots-section');
+  const vrOtsLink         = byId('vr-ots-link', HTMLAnchorElement);
   const vrPackageNote     = byId('vr-package-note');
   const cancelBtn         = byId('verify-operation-cancel', HTMLButtonElement);
   const verifyPackageModeNote = byId('verify-package-mode-note');
+  const verifyModeDescription = byId('verify-mode-description');
   const verifyPackageCapabilityCopy = byId('verify-package-capability-copy');
 
   const vstatus = createStatusList(byId('vr-status-list'), 'vs-');
@@ -168,10 +172,15 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     vstatus.clear();
     byId('vr-hash').textContent = '';
     vrPackageSection.classList.add('hidden');
+    vrOtsSection.classList.add('hidden');
     vrPackageNote.classList.add('hidden');
     if (currentUpgradedUrl) {
       URL.revokeObjectURL(currentUpgradedUrl);
       currentUpgradedUrl = null;
+    }
+    if (currentUpgradedOtsUrl) {
+      URL.revokeObjectURL(currentUpgradedOtsUrl);
+      currentUpgradedOtsUrl = null;
     }
   }
 
@@ -182,7 +191,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
   function refreshPackageCapability(): void {
     packageCapability = detectPackageCapability();
     verifyPackageModeNote.textContent = packageCapability.supported
-      ? 'Secondary option: verify a ZIP package that already includes the original file.'
+      ? 'Verify a proof package containing the original file and its proof. Maximum package size: 100 MB.'
       : 'Proof package verification is unavailable in this browser/app mode. Use the original file and its .ots proof instead.';
     verifyPackageCapabilityCopy.textContent = packageCapability.supported
       ? 'Proof package verification is available in this browser/app mode for ZIP files up to 100 MB.'
@@ -255,6 +264,11 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     vzipPanel.classList.toggle('hidden',      mode !== 'vzip');
     vseparatePanel.classList.toggle('hidden', mode !== 'vseparate');
     vtextPanel.classList.toggle('hidden',     mode !== 'vtext');
+    verifyModeDescription.textContent = mode === 'vzip'
+      ? 'Verify a proof package containing the original file and its proof. Maximum package size: 100 MB.'
+      : mode === 'vtext'
+        ? 'Verify text against its OpenTimestamps proof.'
+        : 'Verify an original file against its OpenTimestamps proof.';
     updateVerifyBtn();
   }
 
@@ -385,10 +399,11 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     otsName: string;
     packageOriginal?: Blob | Uint8Array<ArrayBuffer>;
     packageSize?: number;
+    inputKind: 'ots' | 'zip' | 'text';
     signal?: AbortSignal;
   }): Promise<Verdict> {
     const OTS = getOts();
-    const { hashHex, otsBytes, origName, otsName, packageOriginal, packageSize, signal } = params;
+    const { hashHex, otsBytes, origName, otsName, packageOriginal, packageSize, inputKind, signal } = params;
 
     vstatus.clear();
     vrPackageSection.classList.add('hidden');
@@ -488,13 +503,15 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
             details.push(dateStr);
           }
         }
-        vstatus.el.appendChild(makeVerdictBanner('verified', '✓', 'VERIFIED – Anchored in Bitcoin', details));
+        vstatus.el.appendChild(makeVerdictBanner('verified', '✓', 'VERIFIED', [
+          'Anchored in Bitcoin', ...details, 'File matches proof.',
+        ]));
       } else {
         verdict = 'pending';
         setResultState('pending');
-        vstatus.el.appendChild(makeVerdictBanner('pending', '–', 'Initial proof – not yet anchored in Bitcoin', [
-          'This is normal for a new proof, not an error. The hash and the .ots file match; OpenTimestamps has your hash, but the commitment containing it has not been anchored to Bitcoin yet.',
-          'Bitcoin anchoring has not completed yet – come back later and verify again.',
+        vstatus.el.appendChild(makeVerdictBanner('pending', '✓', 'File matches proof', [
+          'Waiting for Bitcoin anchoring',
+          'This is normal for a new proof. Verify again later.',
         ]));
       }
 
@@ -513,13 +530,14 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
       }
     }
 
-    // Erbjud ett komplett ompaketerat ZIP i stället för en lös .ots-fil – en
-    // ensam .ots är obegriplig för mottagaren, medan paketet (original + bevis
-    // + README) kan verifieras direkt i ZIP-fliken. Visas alltid när beviset är
-    // verifierat, och även annars om uppgraderingen hämtade ny data (den ska
-    // inte gå förlorad bara för att verifieringssteget misslyckades).
+    // Only create output when it adds something: an upgraded .ots, or a ZIP
+    // made from the separate file + .ots flow. An already complete input ZIP
+    // is already the equivalent package the user supplied.
     throwIfSignalAborted(signal);
-    if ((verdict === 'verified' || upgradedBytes) && packageOriginal && packageSize !== undefined) {
+    const shouldOfferPackage = packageOriginal && packageSize !== undefined &&
+      (inputKind === 'ots' || (inputKind === 'zip' && Boolean(upgradedBytes))) &&
+      (verdict === 'verified' || Boolean(upgradedBytes));
+    if (shouldOfferPackage) {
       if (!packageCapability.supported) {
         vrPackageNote.textContent = packageUnsupportedMessage();
         vrPackageNote.classList.remove('hidden');
@@ -548,10 +566,19 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
       currentUpgradedUrl = URL.createObjectURL(blob);
       vrUpgradedLink.href = currentUpgradedUrl;
       vrUpgradedLink.download = folderName + '.zip';
-      vrUpgradedLink.textContent = verdict === 'verified'
-        ? 'Save verified proof package (.zip)'
-        : 'Save updated proof package (.zip)';
+      vrUpgradedLink.textContent = 'Save .zip';
       vrPackageSection.classList.remove('hidden');
+    }
+
+    if (upgradedBytes && inputKind !== 'zip') {
+      const standaloneBytes = new Uint8Array(upgradedBytes.length);
+      standaloneBytes.set(upgradedBytes);
+      currentUpgradedOtsUrl = URL.createObjectURL(new Blob([standaloneBytes], { type: 'application/octet-stream' }));
+      vrOtsLink.href = currentUpgradedOtsUrl;
+      vrOtsLink.download = opentimestampsProofName(otsName);
+      vrOtsSection.classList.remove('hidden');
+      vrPackageNote.textContent = 'Your OpenTimestamps proof has been updated with Bitcoin verification data.';
+      vrPackageNote.classList.remove('hidden');
     }
 
     return verdict;
@@ -654,6 +681,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
           otsName: ots.name,
           packageOriginal: fileBytes,
           packageSize: fileBytes.byteLength,
+          inputKind: 'zip',
           signal: opSignal,
         });
 
@@ -694,6 +722,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
           otsName: vOtsFile.name,
           packageOriginal: vOrigFile,
           packageSize: vOrigFile.size,
+          inputKind: 'ots',
           signal: opSignal,
         });
 
@@ -710,6 +739,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
           otsName: vOtsTextFile.name,
           packageOriginal: fileBytes,
           packageSize: fileBytes.byteLength,
+          inputKind: 'text',
           signal: opSignal,
         });
       }

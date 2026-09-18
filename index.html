@@ -13,9 +13,7 @@
     <span class="brand-mark" id="brand-mark" aria-hidden="true"></span>
     <h1>Proof</h1>
   </div>
-  <p class="sub">
-    Timestamp text or a file. A SHA-256 hash is created on your device and submitted to OpenTimestamps, which combines it with other hashes into a cryptographic commitment that is later anchored to the Bitcoin blockchain.
-  </p>
+  <p class="sub">Create and verify OpenTimestamps proofs for files or text.</p>
 </header>
 
 <main class="app-body">
@@ -28,10 +26,8 @@
         <button class="tab active" type="button" aria-pressed="true" data-tab="file">File</button>
         <button class="tab" type="button" aria-pressed="false" data-tab="text">Text</button>
       </div>
-      <div class="helper-text">
-        Create a proof from a file or a short piece of text. A SHA-256 hash is created locally – your file or text never leaves your device. Only the hash is submitted to OpenTimestamps. Save the resulting .ots proof file for independent verification later.
-      </div>
-      <div class="mode-note" id="package-capability-copy"></div>
+      <div class="helper-text">Create a timestamp proof from a file or a short piece of text. Your content never leaves your device – only its SHA-256 hash is submitted to OpenTimestamps.</div>
+      <div class="mode-note hidden" id="package-capability-copy"></div>
 
       <div id="file-panel">
         <input type="file" id="file-input">
@@ -40,6 +36,7 @@
           <p id="file-name">No file selected</p>
         </label>
       </div>
+      <div class="mode-note hidden" id="verify-package-capability-copy"></div>
 
       <div id="text-panel" class="hidden">
         <textarea id="text-input" placeholder="Type or paste your text here…"></textarea>
@@ -60,19 +57,14 @@
     <h2 class="card-title">Verify proof</h2>
     <div class="input-card-main">
       <div class="tabs" role="group" aria-label="Verification input type">
-        <button class="vtab active" type="button" aria-pressed="true" data-vtab="vseparate">Verify original file + .ots</button>
-        <button class="vtab" type="button" aria-pressed="false" data-vtab="vzip">Verify proof package (.zip)</button>
-        <button class="vtab" type="button" aria-pressed="false" data-vtab="vtext">Text + OTS</button>
+        <button class="vtab active" type="button" aria-pressed="true" data-vtab="vseparate">File + .ots</button>
+        <button class="vtab" type="button" aria-pressed="false" data-vtab="vzip">Proof Package</button>
+        <button class="vtab" type="button" aria-pressed="false" data-vtab="vtext">Text + .ots</button>
       </div>
-      <div class="helper-text">
-        For large files, use the original file and its .ots proof.
-        Proof package verification is currently limited to 100&nbsp;MB.
-        Proof packages include the original file.
-      </div>
-      <div class="mode-note" id="verify-package-capability-copy"></div>
+      <div class="mode-note verify-mode-description" id="verify-mode-description"></div>
 
       <div id="vzip-panel" class="hidden">
-        <div class="mode-note" id="verify-package-mode-note">Secondary option: verify a ZIP package that already includes the original file.</div>
+        <div class="mode-note hidden" id="verify-package-mode-note"></div>
         <input type="file" id="zip-input" accept=".zip">
         <label for="zip-input" class="drop" id="zip-drop">
           <p id="zip-prompt"><strong>Drop the proof package (ZIP) here</strong></p>
@@ -81,7 +73,6 @@
       </div>
 
       <div id="vseparate-panel">
-        <div class="mode-note">Primary option: verify the original file directly, without packaging it into a ZIP.</div>
         <div class="drop-label">Original file</div>
         <input type="file" id="vorig-input">
         <label for="vorig-input" class="drop compact" id="vorig-drop">
@@ -125,13 +116,15 @@
       <div class="result-label">SHA-256</div>
       <div class="hash" id="result-hash"></div>
       <div id="status-list" role="status" aria-live="polite"></div>
-      <a class="download solid hidden" id="proof-link">Save Timestamp (.ots)</a>
-      <p class="share-warning hidden" id="package-note">Proof packages include the original file and are currently limited to 100 MB. Save the .ots proof file instead.</p>
+      <div class="section-label">Save your proof</div>
+      <p class="section-note"><strong>OpenTimestamps Proof (.ots)</strong><br>Standalone proof file for independent verification.</p>
+      <a class="download solid hidden" id="proof-link">Save .ots</a>
+      <p class="share-warning hidden" id="package-note"></p>
       <div class="package-section hidden" id="package-section">
-        <div class="section-label">Proof package</div>
-        <p class="section-note">Keep the original file and proof together in one ZIP.</p>
-        <a class="download" id="download-link">Save proof package (.zip)</a>
-        <p class="share-warning" id="download-warning">Warning: this ZIP contains the original file. Anyone you send the ZIP to can open the original.</p>
+        <div class="section-label">Proof Package (.zip)</div>
+        <p class="section-note">Original file and proof together in one ZIP.</p>
+        <a class="download" id="download-link">Save .zip</a>
+        <p class="share-warning" id="download-warning">Contains the original file. Anyone with the ZIP can open it.<br>Maximum package size: 100 MB.</p>
       </div>
       <div class="new-proof-confirm hidden" id="new-proof-confirm" role="alert">
         <p>This proof has not been downloaded yet. Creating a new proof will discard it.</p>
@@ -162,6 +155,11 @@
       <div class="hash" id="vr-hash"></div>
       <div id="vr-status-list" role="status" aria-live="polite"></div>
       <p class="share-warning hidden" id="vr-package-note">Proof packages are unavailable in this browser/app mode. Save the .ots proof file instead.</p>
+      <div class="package-section hidden" id="vr-ots-section">
+        <div class="section-label">OpenTimestamps Proof (.ots)</div>
+        <p class="section-note">Updated proof containing the Bitcoin verification data.</p>
+        <a class="download solid" id="vr-ots-link">Save .ots</a>
+      </div>
       <div class="package-section hidden" id="vr-package-section">
         <div class="section-label">Proof package</div>
         <p class="section-note">Keep the original file and proof together in one ZIP.</p>
@@ -178,9 +176,9 @@
     <summary aria-label="About Proof"><span class="info-badge" aria-hidden="true">i</span></summary>
     <div class="footer-panel">
       <p>Proof creates a SHA-256 hash of your text or file on your device. Only this hash is submitted to OpenTimestamps – your original content is never sent.</p>
-      <p>OpenTimestamps combines many submitted hashes into a shared cryptographic commitment, which is later anchored to the Bitcoin blockchain. Your .ots file contains the information needed to connect your hash to that timestamp.</p>
-      <p>Keep the original file or text together with its .ots file. Once the Bitcoin timestamp has been established, the proof can be independently verified at any later time. You do not need this app to verify it. The .ots file uses the open OpenTimestamps protocol and can be verified with compatible OpenTimestamps software.</p>
-      <p>Using this app is free. OpenTimestamps calendar servers are free to use and rely on donations. Learn more at <a href="https://opentimestamps.org/" target="_blank" rel="noopener noreferrer">opentimestamps.org</a>.</p>
+      <p>OpenTimestamps combines submitted hashes into shared cryptographic commitments that are later anchored to the Bitcoin blockchain. Your .ots file contains the information needed to connect your hash to that proof.</p>
+      <p>Keep the original file or text together with its .ots proof. Once anchored, the proof can be independently verified at any later time. You do not need Proof to verify it – .ots is an open OpenTimestamps format that can be verified with compatible software.</p>
+      <p>Proof is free to use. OpenTimestamps is an open protocol and its public calendar servers are free to use. Learn more at <a href="https://opentimestamps.org/" target="_blank" rel="noopener noreferrer">opentimestamps.org</a>.</p>
     </div>
   </details>
 </footer>
