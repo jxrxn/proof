@@ -1,9 +1,11 @@
 # Proof – Bitcoin Timestamp
 
 Tidsstämpla text eller filer via [OpenTimestamps](https://opentimestamps.org/).
-Appen skapar SHA-256 lokalt i webbläsaren och skickar bara digesten till
-OpenTimestamps. Originalfilen lämnar inte appen när du sparar eller verifierar
-ett vanligt `.ots`-bevis.
+Appen beräknar filens SHA-256-hash lokalt i webbläsaren. OpenTimestamps-klienten
+omvandlar sedan hashvärdet till en maskerad commitment som skickas till
+kalenderservrarna och senare förankras tillsammans med många andra commitments
+i Bitcoin. Originalfilen och dess direkta SHA-256-hash lämnar aldrig
+webbläsaren.
 
 ## v0.2-beta i korthet
 
