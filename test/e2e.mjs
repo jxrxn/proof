@@ -689,13 +689,15 @@ try {
   check(roundtrip.linkName === 'hello-world.txt_opentimestamps.zip',
         'round-trip keeps a stable package name (' + roundtrip.linkName + ')');
 
-  // Saving the package offers to start fresh (dialog is dismissed = cancel)
-  await page.click('#vr-upgraded-link');
-  await new Promise(r => setTimeout(r, 900));
-  check(dialogs.includes('Start fresh with a new proof?'),
-        'saving the verified package asks to start fresh');
-  check(!await page.$eval('#vr-package-section', el => el.classList.contains('hidden')),
-        'cancelling the dialog keeps the result intact');
+  // The explicit secondary action resets verification without relying on a
+  // download-triggered browser dialog.
+  await page.click('#new-verification');
+  check(await page.$eval('#verify-result-content', el => el.classList.contains('hidden')),
+        'Verify Another Proof hides the previous result');
+  check(!await page.$eval('#verify-result-empty', el => el.classList.contains('hidden')),
+        'Verify Another Proof restores the empty result state');
+  check(await page.$eval('#zip-name', el => el.textContent === 'No ZIP selected'),
+        'Verify Another Proof clears the selected verification input');
 
   if (errors.length) { console.log('page errors:', errors); failures++; }
   console.log(failures === 0 ? 'ALL CHECKS PASSED' : failures + ' CHECK(S) FAILED');

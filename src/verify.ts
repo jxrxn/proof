@@ -124,6 +124,8 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
   let currentUpgradedUrl: string | null = null;
   let currentUpgradedOtsUrl: string | null = null;
   let currentVerifyAbort: AbortController | null = null;
+  let verifiedOutputDownloadStarted = false;
+  let updatedProofAvailable = false;
   let packageCapability = detectPackageCapability();
 
   const vtabs             = document.querySelectorAll<HTMLButtonElement>('.vtab');
@@ -142,6 +144,10 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
   const vrOtsSection      = byId('vr-ots-section');
   const vrOtsLink         = byId('vr-ots-link', HTMLAnchorElement);
   const vrPackageNote     = byId('vr-package-note');
+  const newVerificationBtn = byId('new-verification', HTMLButtonElement);
+  const newVerifyConfirm  = byId('new-verify-confirm');
+  const keepVerificationBtn = byId('keep-verification', HTMLButtonElement);
+  const discardVerificationBtn = byId('discard-verification', HTMLButtonElement);
   const cancelBtn         = byId('verify-operation-cancel', HTMLButtonElement);
   const verifyPackageModeNote = byId('verify-package-mode-note');
   const verifyModeDescription = byId('verify-mode-description');
@@ -174,6 +180,8 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     vrPackageSection.classList.add('hidden');
     vrOtsSection.classList.add('hidden');
     vrPackageNote.classList.add('hidden');
+    newVerifyConfirm.classList.add('hidden');
+    updatedProofAvailable = false;
     if (currentUpgradedUrl) {
       URL.revokeObjectURL(currentUpgradedUrl);
       currentUpgradedUrl = null;
@@ -241,6 +249,8 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
 
   function resetPanel() {
     verifyDone = false;
+    verifiedOutputDownloadStarted = false;
+    updatedProofAvailable = false;
     clearVerifyOthers(null);
     updateVerifyBtn();
     clearVerifyResult();
@@ -568,6 +578,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
       vrUpgradedLink.download = folderName + '.zip';
       vrUpgradedLink.textContent = 'Save .zip';
       vrPackageSection.classList.remove('hidden');
+      if (upgradedBytes) updatedProofAvailable = true;
     }
 
     if (upgradedBytes && inputKind !== 'zip') {
@@ -577,6 +588,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
       vrOtsLink.href = currentUpgradedOtsUrl;
       vrOtsLink.download = opentimestampsProofName(otsName);
       vrOtsSection.classList.remove('hidden');
+      updatedProofAvailable = true;
       vrPackageNote.textContent = 'Your OpenTimestamps proof has been updated with Bitcoin verification data.';
       vrPackageNote.classList.remove('hidden');
     }
@@ -584,12 +596,25 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     return verdict;
   }
 
-  // Samma beteende som nedladdningslänken på skapa-sidan: efter att paketet
-  // sparats, erbjud att börja om med ett nytt bevis.
-  vrUpgradedLink.addEventListener('click', () => {
-    setTimeout(() => {
-      if (confirm('Start fresh with a new proof?')) resetPanel();
-    }, 400);
+  for (const link of [vrUpgradedLink, vrOtsLink]) {
+    link.addEventListener('click', () => { verifiedOutputDownloadStarted = true; });
+  }
+
+  newVerificationBtn.addEventListener('click', () => {
+    const hasUnsavedUpdatedProof = updatedProofAvailable && !verifiedOutputDownloadStarted;
+    if (hasUnsavedUpdatedProof) {
+      newVerifyConfirm.classList.remove('hidden');
+      return;
+    }
+    resetPanel();
+  });
+
+  keepVerificationBtn.addEventListener('click', () => {
+    newVerifyConfirm.classList.add('hidden');
+  });
+
+  discardVerificationBtn.addEventListener('click', () => {
+    resetPanel();
   });
 
   cancelBtn.addEventListener('click', () => {
@@ -605,6 +630,9 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
     }
     verifyBtn.disabled = true;
     verifyBtn.textContent = 'Verifying…';
+    verifiedOutputDownloadStarted = false;
+    updatedProofAvailable = false;
+    newVerifyConfirm.classList.add('hidden');
     // En controller för HELA operationen (läsning → hash → verifiering →
     // paket): ny input eller cancel avbryter vid nästa checkpoint.
     currentVerifyAbort = new AbortController();

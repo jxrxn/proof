@@ -42,6 +42,7 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
   const packageCapabilityCopy = byId('package-capability-copy');
   const packageSection  = byId('package-section');
   const dropPrompt      = byId('drop-prompt');
+  const resultCard      = byId('result-card');
   const resultContent   = byId('result-content');
   const resultEmpty     = byId('result-empty');
   const cancelBtn       = byId('stamp-operation-cancel', HTMLButtonElement);
@@ -114,6 +115,7 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
     resetStampInput();
     clearDownload();
     hideResultContent();
+    resultCard.classList.remove('is-created');
     clearResultMeta();
     status.clear();
     operationUi.reset();
@@ -198,6 +200,7 @@ export function initStamp(opts: { onInputActivity: () => void }): StampPanel {
     status.clear();
     clearDownload();
     hideResultContent();
+    resultCard.classList.remove('is-created');
     clearResultMeta();
     operationUi.reset();
     // En controller för HELA operationen (hash → stamp → paket), inte bara
@@ -384,6 +387,7 @@ How this proof works (4 stages):
         cancelVisible: false,
         cancelEnabled: false,
       });
+      resultCard.classList.add('is-created');
       resetStampInput();
 
     } catch (err) {

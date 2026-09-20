@@ -173,6 +173,14 @@
         <a class="download solid" id="vr-upgraded-link">Save verified proof package (.zip)</a>
         <p class="share-warning" id="vr-download-warning">Warning: this ZIP contains the original file. Anyone you send the ZIP to can open the original.</p>
       </div>
+      <div class="new-proof-confirm hidden" id="new-verify-confirm" role="alert">
+        <p>The updated proof has not been downloaded yet. Verifying another proof will discard it.</p>
+        <div class="new-proof-actions">
+          <button class="secondary" id="keep-verification">Keep Current Verification</button>
+          <button class="secondary" id="discard-verification">Discard and Verify Another</button>
+        </div>
+      </div>
+      <button class="secondary new-proof-btn" id="new-verification">Verify Another Proof</button>
     </div>
   </div>
 

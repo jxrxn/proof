@@ -150,8 +150,8 @@ html, body {
    underkanten hålls fast (se translateY nedan), så en större höjd lyfter
    ringen utan att flytta dess fot. */
 .brand-mark {
-  width: 2.2rem;
-  height: 2.2rem;
+  width: 2.6rem;
+  height: 2.6rem;
   flex: none;
   line-height: 0;
   /* Centrerat i stället för baseline-justerat: en SVG:s baslinje är dess
@@ -159,12 +159,10 @@ html, body {
      baseline-justeringen gör dessutom att .brand exponerar h1:s baslinje uppåt
      i headern, så att underrubriken hamnar på samma linje som Proof. */
   align-self: center;
-  /* Låser märkets underkant 8.15 px under baslinjen, så att en ändrad höjd
-     skalar uppåt i stället för åt båda håll. Flex placerar märket med
-     överkant vid h1:s ascender (1.1429rem över baslinjen), alltså:
-       skift = 1.725rem - märkeshöjd = 1.725 - 2.2 = -0.475rem
-     Ändras höjden ovan räknas skiftet om med samma formel. */
-  transform: translateY(-0.475rem);
+  /* Optisk centrering mot ordmärket. Märket flyttas cirka 3 px ned från den
+     matematiskt baslinjelåsta placeringen eftersom ringens visuella tyngd
+     annars upplevs ligga för högt. */
+  transform: translateY(-0.66rem);
 }
 .brand-mark svg {
   width: 100%;
@@ -173,7 +171,7 @@ html, body {
 }
 
 .app-header {
-  padding: 14px 20px 11px;
+  padding: 20px 20px 11px;
   display: flex;
   align-items: baseline;
   /* Eget radavstånd: när underrubriken bryter till egen rad ska den ligga
@@ -215,9 +213,14 @@ html, body {
 }
 
 .card.create-proof,
-.card.proof {
+.card.proof.is-created {
   background: var(--blue-soft);
   border-color: var(--blue-soft-line);
+}
+
+.card.proof {
+  background: var(--gray-soft);
+  border-color: var(--gray-line);
 }
 
 .card.verify-proof {
@@ -475,12 +478,11 @@ button.secondary:disabled {
 #create-proof-card .drop.over,
 #stamp-input-card .drop.over { background: #10263d; color: var(--text); }
 /* Samma riktning (135deg) och tjocklek som de bleka ränderna före hover,
-   men utan att tända upp lika mycket. create-proof har 12px-ränder (period 24px),
-   stamp/verify har 6px-ränder (period 12px). */
+   men utan att tända upp lika mycket. Alla har 12px-ränder (period 24px). */
 #create-proof-card .drop.over::before { background: repeating-linear-gradient(135deg, transparent, transparent 12px, rgba(136, 199, 255, 0.2) 12px, rgba(136, 199, 255, 0.2) 24px); }
-#stamp-input-card .drop.over::before { background: repeating-linear-gradient(135deg, transparent, transparent 6px, rgba(136, 199, 255, 0.2) 6px, rgba(136, 199, 255, 0.2) 12px); }
+#stamp-input-card .drop.over::before { background: repeating-linear-gradient(135deg, transparent, transparent 12px, rgba(136, 199, 255, 0.2) 12px, rgba(136, 199, 255, 0.2) 24px); }
 #verify-input-card .drop.over { background: #2b1d0b; color: var(--text); }
-#verify-input-card .drop.over::before { background: repeating-linear-gradient(135deg, transparent, transparent 6px, rgba(255, 184, 77, 0.2) 6px, rgba(255, 184, 77, 0.2) 12px); }
+#verify-input-card .drop.over::before { background: repeating-linear-gradient(135deg, transparent, transparent 12px, rgba(255, 184, 77, 0.2) 12px, rgba(255, 184, 77, 0.2) 24px); }
 .drop.has-file {
   color: var(--text);
 }
@@ -497,20 +499,14 @@ button.secondary:disabled {
 /* Animera ränderna så de glider jämnt i en sömlös loop.
    För 135deg-mönstret gör en bakgrundsruta på period * √2 att mönstret kan
    upprepas sömlöst, och vi flyttar bakgrunden exakt en period per varv. */
-#create-proof-card .drop.over::before {
+#create-proof-card .drop.over::before,
+#stamp-input-card .drop.over::before,
+#verify-input-card .drop.over::before {
   background-size: 33.94px 33.94px;   /* 24px * √2 */
   animation: dropStripeSlide24 1s linear infinite;
 }
-#stamp-input-card .drop.over::before,
-#verify-input-card .drop.over::before {
-  background-size: 16.97px 16.97px;   /* 12px * √2 */
-  animation: dropStripeSlide12 1s linear infinite;
-}
 @keyframes dropStripeSlide24 {
   to { background-position: 16.97px 16.97px; }   /* 24px / √2 = en period */
-}
-@keyframes dropStripeSlide12 {
-  to { background-position: 8.49px 8.49px; }      /* 12px / √2 = en period */
 }
 @media (prefers-reduced-motion: reduce) {
   #create-proof-card .drop.over::before,
@@ -794,6 +790,10 @@ details a { color: var(--blue); }
   /* Avslutar sektionen. Kollapsar med marginalen på det som följer, så samma
      luft uppstår oavsett om det är Create New Proof eller bekräftelserutan. */
   margin-bottom: 28px;
+}
+
+.card.verification-result.is-success .package-section {
+  border-top-color: var(--green-line);
 }
 /* Nedre avdelaren bara i CREATED PROOF, där något följer efter sektionen.
    I Verification Result är den sista i kortet och skulle bli en lös linje. */
