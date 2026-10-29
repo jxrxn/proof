@@ -74,7 +74,12 @@ alla sju subsets varje gång, inklusive `greek-ext` och `cyrillic-ext`.
 | `inter-vietnamese` | 10 252 B |
 | **Totalt** | **239 680 B** |
 
-Emittera de icke-latinska subsetsen som systerfiler bredvid `index.html` –
+**Avvisat i den aktuella [arbetsplanen](LOAD-SIZE-PLAN.md):** systerfiler
+skulle försämra den ensamma HTML-filens fonttäckning. Alternativet och
+siffrorna nedan är en historisk möjlighet, inte nästa arbetssteg. Planen
+behåller alla typsnitt inbakade och provar i stället begränsning av viktaxeln.
+
+Ett alternativ vore att emittera de icke-latinska subsetsen som systerfiler bredvid `index.html` –
 `emitIcons()` i `vite.config.ts` gör redan exakt det mönstret – och behåll
 bara `inter-latin` + `jetbrains-mono-latin` inbakade. Då börjar
 `unicode-range` fungera som avsett: en kyrillisk läsare hämtar 18 kB, alla
@@ -102,10 +107,12 @@ det intervallet krymper filen ytterligare.
 
 ### 2. OTS-bundlen: 448 kB, 60 % av nyttolasten
 
-Behandlas i sin egen fil. Kort version: merparten är `bitcore-lib` med
-beroenden, och det finns bara där för en kodväg som en webbläsare aldrig kan
-ta. Ett eget bygge ur OTS-källkoden med `bitcoin.js` stubbad har rimlig
-förväntan 1,5 MB → under 200 kB.
+Behandlas i sin egen fil. `bitcore-lib` med beroenden används för en lokal
+nodväg som webbläsaren inte tar. Även crypto- och HTTP-beroenden bidrar
+till storleken; fördelningen mellan träden är ännu inte uppmätt. Ett eget bygge ur OTS-källkoden med `bitcoin.js` stubbad kan minska
+storleken, men vinsten är inte uppmätt. Crypto- och HTTP-beroenden finns
+kvar; den tidigare prognosen under 200 kB var inte underbyggd. Att ersätta
+dessa lager är ett separat arbete med högre krav på kompatibilitetstester.
 
 Se **`OTS-BUNDLE.md`** för mätningar, varför bitcore ligger där och vad de tre
 alternativen kostar.

@@ -3,16 +3,18 @@
 Analys av `src/vendor/opentimestamps.min.js` – varför den är 1,5 MB, vad av
 den vi faktiskt använder, och vad som skulle krävas för att krympa den.
 
-Skriven 2026-09-17 mot `opentimestamps v.0.4.9`. Alla siffror är uppmätta,
+Skriven 2026-09-17 mot `opentimestamps v.0.4.9`. Historiska storleksmätningar är uppmätta,
 och kommandona för att mäta om dem finns längst ned.
 
 **Slutsats:** vi behöver OpenTimestamps, men vi behöver inte det mesta av
-filen. Den absoluta merparten är `bitcore-lib` med beroenden, och det finns
-bara där för en kodväg som en webbläsare aldrig kan ta.
+filen. En stor del är beroenden. `bitcore-lib` behövs för en lokal nodväg som
+webbläsaren inte använder, men även crypto- och HTTP-polyfills bidrar.
+Deras respektive bidrag måste mätas med separata provbyggen.
 
 Detta är enbart en storleksfråga. Ingen korrekthets- eller integritetsbrist:
-digest-only-gränsen i `src/lib/ots.ts` håller oavsett bundle-storlek, och
-hashen lämnar aldrig enheten.
+digest-only-gränsen i `src/lib/ots.ts` håller oavsett bundle-storlek.
+Original och filnamn stannar lokalt; OTS omvandlar digesten till en maskerad
+commitment för kalenderanropen.
 
 ## Vad filen är
 
@@ -76,10 +78,24 @@ return header.time;
 ```
 
 Hämta JSON, jämför hex, returnera tidsstämpeln. Merkle-kedjan fram till den
-digesten räknas ut av OTS egna `ops.js` med SHA-256 och RIPEMD-160 som
-biblioteket implementerar själv.
+digesten räknas ut av OTS `ops.js`, men hashprimitiverna anropas via
+`crypto.createHash`. De implementeras inte av OTS självt; webbläsarbygget
+tillför crypto-polyfills.
 
 Ingenstans i den vägen behövs bitcore.
+
+## Andra stora beroendeträd
+
+Kontroll av den vendrade bundlen 2026-10-29 visar även `crypto-browserify`
+med bland annat `browserify-sign`, `browserify-cipher`, `diffie-hellman`
+och `public-encrypt`, samt `request`/`request-promise` och `tough-cookie`.
+Crypto-trädet kan hålla kvar bland annat `elliptic` och `bn.js` även när
+bitcore tas bort. HTTP-lagret används för kalendrar och Esplora.
+
+Att stubba `bitcoin.js` räcker därför inte som grund för en prognos under
+200 kB. Mät först enbart nodstubben. Mindre crypto- och fetch-adaptrar är
+separata ändringar av byggstenar som verifieringen beror på, med egna krav
+på kompatibilitetstestning. Se [arbetsplanen](LOAD-SIZE-PLAN.md).
 
 ## Vad som kan göras
 
@@ -89,18 +105,25 @@ I stigande risk. Ingen av dem är gjord.
 
 Rimligt val så länge storleken inte gör ont. Kostnaden är en
 engångsnedladdning, inte latens vid användning – appen kör från en lokal
-fil. Bundlen är dessutom det officiella, granskade bygget, vilket har ett
-värde i sig för just den här sortens kod.
+fil. Bundlen är dessutom det officiellt distribuerade bygget. Ett eget bygge
+medför eget underhålls- och verifieringsansvar. Officiell distribution är
+däremot inte belägg för en oberoende säkerhetsgranskning.
 
 ### 2. Egen bundle ur OTS-källkoden
 
 Bygg från `javascript-opentimestamps` källkod med `bitcoin.js` stubbad, så
-att bitcore kan tree-shakas bort. All verifieringslogik lämnas orörd.
-Rimlig förväntan: 1,5 MB → under 200 kB.
+att bitcore och dess exklusiva beroenden kan uteslutas. Behåll i detta första
+steg hash- och HTTP-lagren oförändrade. Storleksvinsten är ännu inte uppmätt;
+den tidigare prognosen under 200 kB saknade tillräckligt underlag.
 
-Måttlig risk, och verifierbar – `test/e2e.mjs` har redan ett fixture som ger
-VERIFIED mot en riktigt förankrad tidsstämpel, så en sådan ändring går att
-kontrollera på riktigt och inte bara i teorin.
+Nodstubben motsvarar steg 2a i arbetsplanen och har lägre risk än byten av
+crypto- och HTTP-lager i 2b. `test/e2e.mjs` har en förankrad VERIFIED-fixture
+som är en relevant delkontroll för 2a, men inte ensam styrker kompatibilitet.
+För 2b krävs dessutom tester av SHA-1, RIPEMD-160, SHA-256, säker
+`randomBytes` via `crypto.getRandomValues`, nonce/payload och HTTP-beteende.
+Samma digest ska ge olika kalenderpayloads vid separata stämplingar, och
+saknad säker slump ska ge ett tydligt fel utan svag fallback. En enda
+VERIFIED-fixture täcker inte dessa krav.
 
 En komplikation att räkna med: npm-paketet `javascript-opentimestamps` ligger
 på 0.4.5 och drar in `web3`, `moment-timezone` och `request` – alltså värre
