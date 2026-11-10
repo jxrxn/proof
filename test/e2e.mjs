@@ -88,24 +88,25 @@ try {
   const initialCopy = await page.evaluate(() => ({
     createHelper: document.querySelector('#stamp-input-card .helper-text')?.textContent || '',
     createCapability: document.getElementById('package-capability-copy')?.textContent || '',
-    verifyHelper: document.querySelector('#verify-input-card .helper-text')?.textContent || '',
+    verifyDescription: document.getElementById('verify-mode-description')?.textContent || '',
     activeVerifyTab: document.querySelector('.vtab.active')?.getAttribute('data-vtab'),
     primaryModeNote: document.querySelector('#vseparate-panel .mode-note')?.textContent || '',
     zipModeNote: document.querySelector('#vzip-panel .mode-note')?.textContent || '',
   }));
-  check(squish(initialCopy.createHelper).includes('Only the hash is submitted to OpenTimestamps.'),
+  check(squish(initialCopy.createHelper).includes('only its SHA-256 hash is submitted to OpenTimestamps'),
         'create copy states that only the hash is submitted');
   check(squish(initialCopy.createCapability).includes('Optional: save a proof package (.zip)')
         && squish(initialCopy.createCapability).includes('limited to 100 MB'),
         'create copy presents proof packages as optional and limited');
   check(squish(initialCopy.createCapability).includes('saving the .ots proof itself supports larger files'),
         'create copy presents .ots as the large-file-safe default');
-  check(squish(initialCopy.verifyHelper).includes('For large files, use the original file and its .ots proof.'),
+  check(squish(initialCopy.verifyDescription).includes('original file against its OpenTimestamps proof')
+        && squish(initialCopy.verifyDescription).includes('Recommended for large files'),
         'verify copy recommends original file + .ots for large files');
-  check(squish(initialCopy.verifyHelper).includes('Proof package verification is currently limited to 100 MB.'),
+  await page.click('.vtab[data-vtab="vzip"]');
+  check((await page.$eval('#verify-mode-description', el => el.textContent)).includes('maximum size: 100 MB'),
         'verify copy states the package limit clearly');
-  check(squish(initialCopy.verifyHelper).includes('Proof packages include the original file.'),
-        'verify copy states that proof packages include the original file');
+  await page.click('.vtab[data-vtab="vseparate"]');
   check(initialCopy.activeVerifyTab === 'vseparate', 'Verify original file + .ots is the default verify mode');
 
   await page.evaluate(() => {
@@ -210,16 +211,23 @@ try {
     packageHidden: document.getElementById('package-section').classList.contains('hidden'),
     proofText: document.getElementById('proof-link').textContent,
     packageText: document.getElementById('download-link').textContent,
+    proofHeading: document.querySelector('#proof-link').previousElementSibling.textContent,
+    packageHeading: document.querySelector('#package-section .section-label').textContent,
+    packageWarning: document.getElementById('download-warning').textContent,
   }));
   if (stamp.err) { console.log('FAIL: stamp errored: ' + stamp.err); process.exit(1); }
   check(/^[0-9a-f]{64}$/.test(stamp.hash), 'stamp produced a SHA-256 hash');
   check(/^proof_.*_initial\.ots$/.test(stamp.proofName), 'stamp produced an initial .ots proof (' + stamp.proofName + ')');
-  check(stamp.proofText === 'Save Timestamp (.ots)', '.ots is presented as the primary download after create');
+  check(stamp.proofText.trim() === 'Save .ots' && stamp.proofHeading.includes('OpenTimestamps Proof (.ots)'),
+        '.ots is presented as the primary download after create');
   check(!stamp.packageHidden && /^proof_.*\.zip$/.test(stamp.dlName), 'stamp produced a proof ZIP (' + stamp.dlName + ')');
-  check(stamp.packageText === 'Save proof package (.zip)',
+  check(stamp.packageText.trim() === 'Save .zip' && stamp.packageHeading.includes('Proof Package (.zip)'),
         'proof package is presented as the secondary ZIP download');
   check(!await page.$eval('#download-warning', el => el.classList.contains('hidden')),
         'original-file warning shown next to the stamp download link');
+  check(squish(stamp.packageWarning).includes('Contains the original file')
+        && squish(stamp.packageWarning).includes('Maximum package size: 100 MB'),
+        'visible ZIP warning states that it contains the original file and is limited to 100 MB');
   check(calendarPosts.length > 0, 'OpenTimestamps calendar POSTs were observed');
   check(!calendarPosts.some(req => req.body.includes(marker) || req.body.includes(smallFileName)),
         'OpenTimestamps requests do not include file contents or file name');
@@ -506,13 +514,15 @@ try {
     bannerText: document.querySelector('#vr-status-list .verdict-banner')?.textContent.slice(0, 140) || null,
     linkHidden: document.getElementById('vr-package-section').classList.contains('hidden'),
     linkText: document.getElementById('vr-upgraded-link').textContent,
+    packageHeading: document.querySelector('#vr-package-section .section-label').textContent,
     linkName: document.getElementById('vr-upgraded-link').download,
     btnDisabled: document.getElementById('verify-btn').disabled,
     operationHidden: document.getElementById('verify-operation').classList.contains('hidden'),
   }));
   console.log('fixture verify:', JSON.stringify(fixture, null, 1));
   check(fixture.banner?.includes('verified'), 'anchored fixture gives VERIFIED verdict');
-  check(!fixture.linkHidden && fixture.linkText === 'Save verified proof package (.zip)',
+  check(!fixture.linkHidden && fixture.linkText.trim() === 'Save .zip'
+        && fixture.packageHeading.includes('Proof package'),
         'repackaged proof ZIP offered after VERIFIED');
   check(!await page.$eval('#vr-download-warning', el => el.classList.contains('hidden')),
         'original-file warning shown next to the verify download link');

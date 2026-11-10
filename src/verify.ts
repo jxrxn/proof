@@ -278,7 +278,7 @@ export function initVerify(opts: { onInputActivity: () => void }): VerifyPanel {
       ? 'Verify a proof package · maximum size: 100 MB.'
       : mode === 'vtext'
         ? 'Verify text against its OpenTimestamps proof.'
-        : 'Verify an original file against its OpenTimestamps proof.';
+        : 'Verify an original file against its OpenTimestamps proof. Recommended for large files.';
     updateVerifyBtn();
   }
 
