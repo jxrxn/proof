@@ -1,5 +1,7 @@
 # Proof – Bitcoin Timestamp
 
+**[Öppna Proof](https://jxrxn.github.io/proof/)**
+
 Tidsstämpla text eller filer via [OpenTimestamps](https://opentimestamps.org/).
 Appen beräknar filens SHA-256-hash lokalt i webbläsaren. OpenTimestamps-klienten
 omvandlar sedan hashvärdet till en maskerad commitment som skickas till
