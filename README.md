@@ -160,7 +160,6 @@ Det här är ett sekundärt verify-flöde.
 - `src/fonts/` – vendrade latin-subsets av Inter och JetBrains Mono (woff2)
 - `src/icons/` – favicon, PWA-ikoner, OG-bild och deras metadata (`icons.ts`)
 - `test/fixtures/` – officiellt hello-world-exempel för VERIFIED-flödet
-- `legacy/proof.html` – gammal arkiverad version; använd inte den som app
 
 ## Tekniska noteringar
 
